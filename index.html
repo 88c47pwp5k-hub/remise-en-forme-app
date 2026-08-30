@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="description" content="Ta remise en forme — programme quotidien HIIT, nutrition, étirement." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Remise en forme" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+  <title>Ta remise en forme</title>
+  <style>
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    .home-hero { padding-top: max(var(--space-xl), env(safe-area-inset-top, 0px) + var(--space-xl)); }
+  </style>
+</head>
+<body>
+
+  <main>
+    <section class="home-hero" aria-label="Accueil">
+      <h1>Ta remise en forme 💪</h1>
+      <p class="greeting">Choisis ton module pour aujourd'hui.</p>
+    </section>
+
+    <div class="modules-grid" role="list">
+
+      <!-- Exercice — actif -->
+      <a href="modules/exercice.html"
+         class="module-card active"
+         role="listitem"
+         aria-label="Module Exercice — Circuit HIIT du jour">
+        <span class="card-icon" aria-hidden="true">🏋️</span>
+        <span class="card-label">Exercice</span>
+        <span class="card-sub">Circuit HIIT du jour</span>
+      </a>
+
+      <!-- Nutrition — bientôt -->
+      <div class="module-card disabled"
+           role="listitem"
+           aria-label="Module Nutrition — bientôt disponible">
+        <span class="soon-badge" aria-label="Bientôt disponible">Bientôt</span>
+        <span class="card-icon" aria-hidden="true">🥗</span>
+        <span class="card-label">Nutrition</span>
+        <span class="card-sub">Plan alimentaire</span>
+      </div>
+
+      <!-- Étirement — bientôt -->
+      <div class="module-card disabled"
+           role="listitem"
+           aria-label="Module Étirement — bientôt disponible">
+        <span class="soon-badge" aria-label="Bientôt disponible">Bientôt</span>
+        <span class="card-icon" aria-hidden="true">🧘</span>
+        <span class="card-label">Étirement</span>
+        <span class="card-sub">Mobilité & souplesse</span>
+      </div>
+
+      <!-- Eau — bientôt -->
+      <div class="module-card disabled"
+           role="listitem"
+           aria-label="Module Eau — bientôt disponible">
+        <span class="soon-badge" aria-label="Bientôt disponible">Bientôt</span>
+        <span class="card-icon" aria-hidden="true">💧</span>
+        <span class="card-label">Hydratation</span>
+        <span class="card-sub">Suivi eau quotidien</span>
+      </div>
+
+      <!-- Ajouter un module — visuel seulement -->
+      <div class="module-card add-card"
+           role="listitem"
+           aria-label="Ajouter un nouveau module (non disponible)">
+        <span class="card-icon" aria-hidden="true">＋</span>
+        <span class="card-label">Ajouter un module</span>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // Enregistrement du Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {
+        // Pas bloquant si SW non disponible (ex: fichier local)
+      });
+    }
+  </script>
+
+</body>
+</html>

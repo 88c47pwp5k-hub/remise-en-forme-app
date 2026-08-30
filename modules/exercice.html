@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="apple-touch-icon" href="../icons/icon-192.png" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <title>Exercice — Remise en forme</title>
+  <style>
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    .page-main { padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px)); }
+  </style>
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="app-header" role="banner">
+    <a href="../index.html" class="back-btn" aria-label="Retour à l'accueil">←</a>
+    <div>
+      <h1 id="page-titre">Circuit HIIT du jour</h1>
+      <p class="subtitle" id="page-subtitle">Chargement…</p>
+    </div>
+  </header>
+
+  <!-- Contenu principal — liste des exercices -->
+  <main class="page-main" id="main-content">
+
+    <div class="session-info" id="session-info" role="note">
+      <span class="info-icon" aria-hidden="true">⚡</span>
+      <div class="info-text">
+        <strong id="info-titre">Chargement du programme…</strong>
+        <span id="info-meta"></span>
+      </div>
+    </div>
+
+    <div class="exercice-list" id="exercice-list" role="list" aria-label="Liste des exercices">
+      <!-- Rempli par JS -->
+    </div>
+
+    <button class="btn-primary" id="btn-commencer" type="button">
+      Commencer la séance
+    </button>
+  </main>
+
+  <!-- ============================================================
+       TIMER — vue plein écran
+       ============================================================ -->
+  <div id="timer-overlay"
+       role="dialog"
+       aria-modal="true"
+       aria-label="Séance en cours">
+
+    <!-- Barre de progression globale -->
+    <div class="timer-header">
+      <span class="progress-label" id="timer-progress-label">Exercice 1 / 8</span>
+      <button class="close-timer-btn" id="btn-close-timer" type="button" aria-label="Arrêter la séance">✕</button>
+    </div>
+    <div class="progress-bar-track" role="progressbar" aria-label="Progression globale"
+         aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" id="global-progress-bar-track">
+      <div class="progress-bar-fill" id="global-progress-bar"></div>
+    </div>
+
+    <!-- Corps du timer -->
+    <div class="timer-body" id="timer-body">
+      <!-- Contenu injecté dynamiquement -->
+    </div>
+
+  </div>
+
+  <!-- ============================================================
+       JavaScript — logique du timer
+       ============================================================ -->
+  <script>
+  (() => {
+    'use strict';
+
+    // --- État global ---
+    let programme = null;       // données JSON
+    let exIndex   = 0;          // index dans exercices[]
+    let serie     = 1;          // série courante
+    let countdown = null;       // valeur du compte à rebours
+    let timerId   = null;       // setInterval ID
+    let paused    = false;
+    let inRest    = false;      // période de repos inter-série
+    let seanceDone = false;
+    let totalExCircuit = 0;     // nb total exercices (hors repos)
+
+    // Durée totale en secondes pour la barre SVG du timer
+    let timerTotal  = 0;
+    let timerStart  = 0;        // valeur initiale pour le SVG
+
+    // --- DOM ---
+    const overlay       = document.getElementById('timer-overlay');
+    const timerBody     = document.getElementById('timer-body');
+    const progressLabel = document.getElementById('timer-progress-label');
+    const globalBar     = document.getElementById('global-progress-bar');
+    const globalBarTrack = document.getElementById('global-progress-bar-track');
+    const btnClose      = document.getElementById('btn-close-timer');
+    const btnCommencer  = document.getElementById('btn-commencer');
+
+    // --- SVG countdown helpers ---
+    const SVG_R = 84; // rayon cercle (doit correspondre au viewBox)
+    const SVG_CIRCUM = 2 * Math.PI * SVG_R;
+
+    function makeCountdownHTML(valeur, total) {
+      const pct = total > 0 ? Math.max(0, valeur / total) : 0;
+      const dash = SVG_CIRCUM * (1 - pct);
+      return `
+        <div class="timer-countdown" aria-live="polite" aria-atomic="true">
+          <svg viewBox="0 0 192 192" aria-hidden="true">
+            <circle class="track" cx="96" cy="96" r="${SVG_R}" stroke-dasharray="${SVG_CIRCUM}"/>
+            <circle class="fill" id="svg-arc" cx="96" cy="96" r="${SVG_R}"
+              stroke-dasharray="${SVG_CIRCUM}"
+              stroke-dashoffset="${dash}"/>
+          </svg>
+          <span class="timer-seconds" id="timer-seconds">${valeur}</span>
+          <span class="timer-series-label" id="timer-series-label"></span>
+        </div>`;
+    }
+
+    function updateArc(valeur, total) {
+      const arc = document.getElementById('svg-arc');
+      const sec = document.getElementById('timer-seconds');
+      if (!arc || !sec) return;
+      const pct = total > 0 ? Math.max(0, valeur / total) : 0;
+      arc.style.strokeDashoffset = SVG_CIRCUM * (1 - pct);
+      sec.textContent = valeur;
+    }
+
+    // --- Chargement JSON ---
+    async function chargerProgramme() {
+      try {
+        const resp = await fetch('../data/exercice.json');
+        if (!resp.ok) throw new Error('Fichier introuvable');
+        programme = await resp.json();
+        afficherListe();
+      } catch (e) {
+        document.getElementById('info-titre').textContent = 'Erreur de chargement du programme.';
+        console.error(e);
+      }
+    }
+
+    // --- Affichage liste ---
+    function afficherListe() {
+      document.getElementById('page-titre').textContent = programme.titre;
+      document.getElementById('page-subtitle').textContent = programme.date;
+      document.getElementById('info-titre').textContent = programme.titre;
+
+      const exs = programme.exercices;
+      totalExCircuit = exs.length;
+
+      const metaParts = [];
+      const nbSeries = exs.filter(e => e.series > 1).length;
+      if (nbSeries) metaParts.push(`${exs.length} exercices`);
+      document.getElementById('info-meta').textContent = metaParts.join(' · ') || `${exs.length} exercices`;
+
+      const list = document.getElementById('exercice-list');
+      list.innerHTML = '';
+
+      exs.forEach((ex, i) => {
+        const item = document.createElement('div');
+        let typeClass = '';
+        if (ex.type === 'echauffement') typeClass = 'warm';
+        if (ex.type === 'retour_calme') typeClass = 'cool';
+
+        item.className = `exercice-item ${typeClass}`;
+        item.id = `ex-item-${i}`;
+        item.setAttribute('role', 'listitem');
+
+        // Badge
+        let badgeContent = '';
+        if (ex.type === 'echauffement') badgeContent = '🔥';
+        else if (ex.type === 'retour_calme') badgeContent = '🧊';
+        else badgeContent = i; // numéro réel
+
+        // Détail texte
+        let detail = '';
+        if (ex.type === 'temps' || ex.type === 'echauffement' || ex.type === 'retour_calme') {
+          const min = Math.floor(ex.duree_sec / 60);
+          const sec = ex.duree_sec % 60;
+          const dureeStr = min > 0 ? (sec > 0 ? `${min} min ${sec} sec` : `${min} min`) : `${sec} sec`;
+          detail = ex.series > 1 ? `${ex.series} × ${dureeStr}` : dureeStr;
+        } else if (ex.type === 'reps') {
+          detail = ex.par_cote
+            ? `${ex.series} × ${ex.reps} reps par jambe`
+            : `${ex.series} × ${ex.reps} reps`;
+        }
+
+        item.innerHTML = `
+          <div class="badge" aria-hidden="true">${badgeContent}</div>
+          <div class="ex-body">
+            <div class="ex-nom">${ex.nom}</div>
+            <div class="ex-detail">${detail}</div>
+          </div>
+          <span class="ex-check" aria-hidden="true">✅</span>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // --- Progression globale ---
+    function updateGlobalProgress() {
+      const pct = totalExCircuit > 0
+        ? Math.round((exIndex / totalExCircuit) * 100)
+        : 0;
+      globalBar.style.width = pct + '%';
+      globalBarTrack.setAttribute('aria-valuenow', pct);
+      progressLabel.textContent = `Exercice ${Math.min(exIndex + 1, totalExCircuit)} / ${totalExCircuit}`;
+    }
+
+    // --- Marquer exercice terminé dans la liste ---
+    function marquerExerciceFait(idx) {
+      const item = document.getElementById(`ex-item-${idx}`);
+      if (item) item.classList.add('done');
+    }
+
+    // --- Séries dots ---
+    function seriesDotsHTML(total, current) {
+      return Array.from({ length: total }, (_, i) => {
+        const cls = i < current - 1 ? 'done' : (i === current - 1 ? 'current' : '');
+        return `<div class="series-dot ${cls}" aria-hidden="true"></div>`;
+      }).join('');
+    }
+
+    // --- Afficher un exercice dans le timer ---
+    function afficherExercice() {
+      clearTimer();
+      inRest = false;
+      paused = false;
+
+      if (exIndex >= programme.exercices.length) {
+        afficherFin();
+        return;
+      }
+
+      updateGlobalProgress();
+      const ex = programme.exercices[exIndex];
+
+      // Chip type
+      const typeLabels = {
+        echauffement: 'Échauffement',
+        retour_calme: 'Retour au calme',
+        temps: 'Chrono',
+        reps: 'Reps'
+      };
+      const chipLabel = typeLabels[ex.type] || ex.type;
+
+      let countdownSection = '';
+      let controlsSection = '';
+      let seriesDots = ex.series > 1 ? `
+        <div class="series-dots" role="group" aria-label="Séries">
+          ${seriesDotsHTML(ex.series, serie)}
+        </div>` : '';
+
+      if (ex.type === 'reps') {
+        // Pas de countdown — afficher les reps
+        const repsLabel = ex.par_cote
+          ? `${ex.reps} reps par jambe`
+          : `${ex.reps} reps`;
+
+        countdownSection = `
+          <div class="reps-display">
+            <span class="reps-number">${ex.reps}</span>
+            <span class="reps-unit">${ex.par_cote ? 'reps / jambe' : 'reps'}</span>
+          </div>`;
+
+        const btnLabel = serie < ex.series ? 'Série suivante →' : 'Exercice suivant →';
+        controlsSection = `
+          <div class="timer-controls">
+            <button class="btn-primary" id="btn-suivant" type="button">${btnLabel}</button>
+          </div>`;
+      } else {
+        // Countdown chronométré
+        countdown = ex.duree_sec;
+        timerTotal = ex.duree_sec;
+        timerStart = ex.duree_sec;
+
+        countdownSection = makeCountdownHTML(countdown, timerTotal);
+        controlsSection = `
+          <div class="timer-controls">
+            <button class="timer-pause-btn" id="btn-pause" type="button">⏸ Pause</button>
+          </div>`;
+      }
+
+      const descSection = ex.description
+        ? `<p class="timer-ex-description">${ex.description}</p>` : '';
+
+      const conseilSection = ex.conseil
+        ? `<div class="timer-conseil">💡 ${ex.conseil}</div>` : '';
+
+      timerBody.innerHTML = `
+        <span class="ex-type-chip ${ex.type}">${chipLabel}</span>
+        <h2 class="timer-ex-nom">${ex.nom}</h2>
+        ${descSection}
+        ${countdownSection}
+        ${seriesDots}
+        ${conseilSection}
+        ${controlsSection}
+      `;
+
+      // Brancher les événements
+      const btnSuivant = document.getElementById('btn-suivant');
+      if (btnSuivant) {
+        btnSuivant.addEventListener('click', () => avancerSerie(ex));
+      }
+
+      const btnPause = document.getElementById('btn-pause');
+      if (btnPause) {
+        btnPause.addEventListener('click', togglePause);
+      }
+
+      // Lancer le timer si chronométré
+      if (ex.type !== 'reps') {
+        lancerTimer(ex);
+      }
+    }
+
+    // --- Timer interval ---
+    function lancerTimer(ex) {
+      timerId = setInterval(() => {
+        if (paused) return;
+        countdown--;
+        updateArc(countdown, timerTotal);
+        const seriesLabel = document.getElementById('timer-series-label');
+        if (seriesLabel && ex.series > 1) {
+          seriesLabel.textContent = `Série ${serie} / ${ex.series}`;
+        }
+        if (countdown <= 0) {
+          clearTimer();
+          avancerSerie(ex);
+        }
+      }, 1000);
+    }
+
+    function clearTimer() {
+      if (timerId) { clearInterval(timerId); timerId = null; }
+    }
+
+    // --- Pause / Reprise ---
+    function togglePause() {
+      paused = !paused;
+      const btn = document.getElementById('btn-pause');
+      if (btn) btn.textContent = paused ? '▶ Reprendre' : '⏸ Pause';
+    }
+
+    // --- Avancer série ou exercice ---
+    function avancerSerie(ex) {
+      if (serie < ex.series) {
+        serie++;
+        marquerProgres(ex, serie - 1);
+        afficherRepos(ex);
+      } else {
+        // Toutes les séries faites
+        marquerExerciceFait(exIndex);
+        serie = 1;
+        exIndex++;
+        afficherExercice();
+      }
+    }
+
+    function marquerProgres(ex, serieTerminee) {
+      // Met à jour visuellement les dots dans le timer
+      // (la prochaine afficherExercice reconstruira proprement)
+    }
+
+    // --- Repos inter-série ---
+    function afficherRepos(ex) {
+      clearTimer();
+      inRest = true;
+      paused = false;
+
+      const reposSec = ex.repos_sec || 15;
+      countdown = reposSec;
+      timerTotal = reposSec;
+
+      const nextNom = ex.nom; // même exercice, série suivante
+      const seriesDots = ex.series > 1 ? `
+        <div class="series-dots">
+          ${seriesDotsHTML(ex.series, serie)}
+        </div>` : '';
+
+      timerBody.innerHTML = `
+        <div class="rest-overlay-inner">
+          <div class="rest-label">Repos</div>
+          ${makeCountdownHTML(countdown, timerTotal)}
+          <p class="rest-next">Prochaine : <strong>${nextNom}</strong> — Série ${serie} / ${ex.series}</p>
+          ${seriesDots}
+        </div>
+        <div class="timer-controls" style="max-width:340px;width:100%">
+          <button class="btn-primary" id="btn-skip-rest" type="button">Passer le repos →</button>
+          <button class="timer-pause-btn" id="btn-pause" type="button">⏸ Pause</button>
+        </div>`;
+
+      document.getElementById('btn-skip-rest').addEventListener('click', () => {
+        clearTimer();
+        afficherExercice();
+      });
+      document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+      // Chip repos
+      const chip = document.createElement('span');
+      chip.className = 'ex-type-chip repos';
+      chip.textContent = 'Repos';
+      timerBody.prepend(chip);
+
+      // Timer de repos
+      timerId = setInterval(() => {
+        if (paused) return;
+        countdown--;
+        updateArc(countdown, timerTotal);
+        if (countdown <= 0) {
+          clearTimer();
+          afficherExercice(); // reprend la série suivante
+        }
+      }, 1000);
+    }
+
+    // --- Écran de fin ---
+    function afficherFin() {
+      seanceDone = true;
+      clearTimer();
+      updateGlobalProgress();
+      globalBar.style.width = '100%';
+      progressLabel.textContent = 'Séance terminée !';
+
+      timerBody.innerHTML = `
+        <div class="finish-screen">
+          <div class="finish-trophy">🏆</div>
+          <h2 class="finish-title">Bravo, séance terminée !</h2>
+          <p class="finish-sub">Tu as complété le circuit HIIT du jour.<br>Bien joué — reviens demain !</p>
+          <button class="btn-primary" id="btn-retour-liste" type="button" style="max-width:340px">
+            Retour au programme
+          </button>
+        </div>`;
+
+      document.getElementById('btn-retour-liste').addEventListener('click', fermerTimer);
+
+      // Marquer tous les exercices
+      programme.exercices.forEach((_, i) => marquerExerciceFait(i));
+    }
+
+    // --- Ouvrir / Fermer le timer ---
+    function ouvrirTimer() {
+      exIndex = 0;
+      serie   = 1;
+      seanceDone = false;
+      paused  = false;
+      overlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+      afficherExercice();
+    }
+
+    function fermerTimer() {
+      clearTimer();
+      overlay.classList.remove('visible');
+      document.body.style.overflow = '';
+      exIndex = 0;
+      serie = 1;
+    }
+
+    // --- Événements globaux ---
+    btnCommencer.addEventListener('click', ouvrirTimer);
+    btnClose.addEventListener('click', () => {
+      if (!seanceDone) {
+        if (!confirm('Arrêter la séance en cours ?')) return;
+      }
+      fermerTimer();
+    });
+
+    // Swipe vers le bas pour fermer (mobile)
+    let touchStartY = 0;
+    overlay.addEventListener('touchstart', e => {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    overlay.addEventListener('touchend', e => {
+      const diff = e.changedTouches[0].clientY - touchStartY;
+      if (diff > 80) btnClose.click();
+    }, { passive: true });
+
+    // --- Init ---
+    chargerProgramme();
+  })();
+  </script>
+
+</body>
+</html>

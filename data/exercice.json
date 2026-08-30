@@ -1,0 +1,85 @@
+{
+  "titre": "Circuit HIIT du jour",
+  "date": "Programme de base",
+  "exercices": [
+    {
+      "id": "echauffement",
+      "nom": "Montée de genoux sur place",
+      "type": "echauffement",
+      "duree_sec": 180,
+      "series": 1,
+      "description": "Levez les genoux alternativement à hauteur de hanche, bras en mouvement naturel. Rythme modéré.",
+      "conseil": "Respirez régulièrement, gardez le dos droit."
+    },
+    {
+      "id": "wall-sit",
+      "nom": "Wall sit",
+      "type": "temps",
+      "duree_sec": 37,
+      "series": 3,
+      "description": "Dos contre le mur, cuisses parallèles au sol, genoux à 90°. Tenez la position.",
+      "conseil": "Ne décollez pas le dos du mur. Regardez droit devant.",
+      "repos_sec": 20
+    },
+    {
+      "id": "step-up",
+      "nom": "Step-up sur chaise",
+      "type": "reps",
+      "reps": 12,
+      "par_cote": true,
+      "series": 3,
+      "description": "Montez une jambe sur la chaise, poussez pour monter, descendez lentement. Alternez les jambes.",
+      "conseil": "Gardez le tronc droit. Poussez depuis le talon.",
+      "repos_sec": 20
+    },
+    {
+      "id": "push-up-incline",
+      "nom": "Push-up incliné (mur)",
+      "type": "reps",
+      "reps": 14,
+      "series": 3,
+      "description": "Mains contre le mur à hauteur d'épaule, corps incliné droit. Fléchissez les coudes pour vous rapprocher du mur.",
+      "conseil": "Corps aligné de la tête aux talons. Ne cambrez pas.",
+      "repos_sec": 20
+    },
+    {
+      "id": "dips",
+      "nom": "Dips triceps sur chaise",
+      "type": "reps",
+      "reps": 12,
+      "series": 3,
+      "description": "Mains sur le bord de la chaise, derrière vous. Descendez en fléchissant les coudes, remontez.",
+      "conseil": "Coudes pointés vers l'arrière. Gardez les fesses proches de la chaise.",
+      "repos_sec": 20
+    },
+    {
+      "id": "mountain-climbers",
+      "nom": "Mountain climbers",
+      "type": "reps",
+      "reps": 20,
+      "series": 3,
+      "description": "En position de planche, ramenez alternativement les genoux vers la poitrine à rythme modéré.",
+      "conseil": "Hanches basses et stables. Respirez régulièrement.",
+      "repos_sec": 20
+    },
+    {
+      "id": "planche",
+      "nom": "Planche",
+      "type": "temps",
+      "duree_sec": 30,
+      "series": 3,
+      "description": "Sur les avant-bras ou les mains, corps droit comme une planche. Contractez les abdos.",
+      "conseil": "Ne laissez pas les hanches monter ou descendre. Serrez les fesses.",
+      "repos_sec": 20
+    },
+    {
+      "id": "retour-calme",
+      "nom": "Respiration profonde et étirement léger",
+      "type": "retour_calme",
+      "duree_sec": 180,
+      "series": 1,
+      "description": "Inspirez lentement par le nez (4 sec), retenez (2 sec), expirez par la bouche (6 sec). Étirez doucement.",
+      "conseil": "Laissez votre rythme cardiaque redescendre naturellement."
+    }
+  ]
+}
