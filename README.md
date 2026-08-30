@@ -1,131 +1,160 @@
 # Remise en forme — PWA
 
-Application mobile légère (HTML/CSS/JS vanille, zéro dépendance) installable sur l'écran d'accueil iPhone et Android.
+Application mobile légère (HTML/CSS/JS vanille, zéro dépendance côté client) installable sur l'écran d'accueil iPhone et Android.
 
-## Structure du projet
+## Architecture
 
 ```
 remise-en-forme-app/
-├── index.html              ← Écran d'accueil, grille des modules
-├── manifest.json           ← Métadonnées PWA (icône, nom, couleurs)
-├── service-worker.js       ← Cache offline, stratégie Cache First / Network First
+├── index.html                ← Accueil, grille des modules
+├── manifest.json             ← PWA (icône, nom, couleurs, standalone)
+├── service-worker.js         ← Cache offline (Cache First / Network First)
+├── vercel.json               ← Config Vercel (headers SW, rewrites API)
 ├── css/
-│   └── style.css           ← Feuille de style unique, variables CSS
+│   └── style.css             ← Feuille de style unique, variables CSS orange/blanc
 ├── data/
-│   └── exercice.json       ← Données du programme du jour (éditable sans toucher au code)
+│   └── exercice.json         ← Programme HIIT éditable sans toucher au code
 ├── icons/
-│   ├── icon-192.png        ← Icône PWA 192×192
-│   └── icon-512.png        ← Icône PWA 512×512
-└── modules/
-    └── exercice.html       ← Module Exercice avec timer HIIT
+│   ├── icon-192-v2.png       ← Icône PWA 192×192 (orange, "50+")
+│   └── icon-512-v2.png       ← Icône PWA 512×512
+├── modules/
+│   ├── exercice.html         ← Module HIIT avec timer plein écran
+│   └── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil)
+└── api/
+    └── analyser-repas.js     ← Fonction serverless Vercel → Claude Vision
 ```
 
-## Fonctionnement du module Exercice
+## Hébergement — Vercel
 
-1. `exercice.html` charge `../data/exercice.json` via `fetch`.
-2. La liste des exercices est affichée avec badge numéroté et détail séries/reps.
-3. "Commencer la séance" ouvre un **timer plein écran** :
-   - **Exercices chronométrés** (échauffement, wall sit, planche, retour au calme) : compte à rebours SVG animé.
-   - **Exercices en reps** (step-up, push-up, dips, mountain climbers) : affichage du nombre de reps + bouton "Série suivante".
-   - **Repos inter-série** automatique avec countdown et bouton "Passer".
-   - Barre de progression globale en haut.
-   - Pause/Reprise disponible à tout moment.
-4. À la fin, écran de félicitations. Les exercices terminés sont cochés dans la liste.
+Le site est déployé sur Vercel. Le repo GitHub (`main`) est la source unique de vérité.
 
-## Format de `exercice.json`
+### Déploiement initial
 
-Chaque exercice suit ce schéma :
-
-```jsonc
-{
-  "id": "identifiant-unique",          // string, sert d'ID CSS
-  "nom": "Nom affiché",
-  "type": "echauffement|retour_calme|temps|reps",
-  "duree_sec": 30,                     // pour type "temps"/"echauffement"/"retour_calme"
-  "reps": 12,                          // pour type "reps"
-  "par_cote": true,                    // optionnel : "12 reps par jambe"
-  "series": 3,
-  "description": "Instructions courtes.",
-  "conseil": "Astuce technique.",      // optionnel
-  "repos_sec": 20                      // pause entre séries (défaut : 15 sec)
-}
+```bash
+# Depuis le dossier remise-en-forme-app/
+vercel login          # authentification une fois
+vercel --prod         # déploiement en production
 ```
+
+### Déploiements suivants
+
+Chaque `git push` sur `main` déclenche automatiquement un redéploiement Vercel (si le repo est lié via `vercel link` ou l'intégration GitHub dans la console Vercel).
+
+---
+
+## Clé API Anthropic — OBLIGATOIRE pour le module Nutrition
+
+La fonction `/api/analyser-repas.js` appelle l'API Anthropic (Claude Vision). Elle lit la clé depuis la variable d'environnement `ANTHROPIC_API_KEY`.
+
+### Où créer la clé
+
+1. Va sur [console.anthropic.com](https://console.anthropic.com)
+2. **API Keys** → **Create Key**
+3. Copie la clé (commence par `sk-ant-...`)
+
+### Où la coller dans Vercel
+
+1. Ouvre [vercel.com](https://vercel.com) → ton projet `remise-en-forme-app`
+2. **Settings** → **Environment Variables**
+3. Ajoute :
+   - **Name** : `ANTHROPIC_API_KEY`
+   - **Value** : `sk-ant-...` (ta clé)
+   - **Environments** : Production + Preview
+4. Clique **Save**
+5. Redéploie : `vercel --prod` (ou pousse un commit vide)
+
+> ⚠️ Ne mets JAMAIS cette clé dans le code ou dans un fichier commité. Le fichier `.gitignore` exclut déjà `.env`.
+
+---
 
 ## Ajouter un nouveau module
 
-### 1. Créer le fichier HTML du module
-
-Copier `modules/exercice.html` comme point de départ :
+### 1. Créer le fichier HTML
 
 ```
-modules/nutrition.html
-modules/etirement.html
-modules/eau.html
-modules/cours-langue.html   ← exemple non-fitness
+modules/nouveau-module.html
 ```
 
-La structure attendue :
-- Lien retour vers `../index.html`
-- Chargement des données depuis `../data/[module].json`
-- Logique propre au module (pas de couplage avec les autres)
-
-### 2. Créer le fichier de données
-
-```
-data/nutrition.json
-data/etirement.json
+Reprendre l'en-tête standard :
+```html
+<link rel="stylesheet" href="../css/style.css" />
+<header class="app-header">
+  <a href="../index.html" class="back-btn">←</a>
+  <div><h1>Nom du module</h1></div>
+</header>
+<main class="page-main"> … </main>
 ```
 
-### 3. Activer la carte sur l'accueil
+### 2. Créer les données si nécessaire
 
-Dans `index.html`, trouver la carte du module et :
-- Changer `<div class="module-card disabled">` en `<a href="modules/nutrition.html" class="module-card active">`
-- Supprimer `<span class="soon-badge">Bientôt</span>`
-- Supprimer l'attribut `aria-label "bientôt disponible"`
+```
+data/nouveau-module.json
+```
 
-### 4. Mettre à jour le cache du Service Worker
+### 3. Activer la carte sur l'accueil (`index.html`)
 
-Dans `service-worker.js`, ajouter les nouvelles URLs dans `PRECACHE_URLS` et **incrémenter** `CACHE_NAME` :
+Remplacer :
+```html
+<div class="module-card disabled" …>
+  <span class="soon-badge">Bientôt</span>
+  …
+</div>
+```
+Par :
+```html
+<a href="modules/nouveau-module.html" class="module-card active" …>
+  …
+</a>
+```
 
+### 4. Ajouter une fonction serverless si nécessaire
+
+Créer `api/nouveau-module.js` :
 ```js
-const CACHE_NAME = 'remise-en-forme-v2'; // ← version suivante
-const PRECACHE_URLS = [
-  // ... existant ...
-  '/modules/nutrition.html',
-  '/data/nutrition.json',
-];
+module.exports = async function handler(req, res) {
+  // lecture de process.env.MA_CLE_API
+  // logique…
+  res.status(200).json({ … });
+};
 ```
 
-> Le Service Worker utilise **Cache First** pour les assets HTML/CSS et **Network First** pour les JSON — les données du programme peuvent donc être mises à jour sans changer la version du cache.
+### 5. Mettre à jour le cache Service Worker
+
+Dans `service-worker.js`, incrémenter `CACHE_NAME` et ajouter les nouveaux fichiers dans `PRECACHE_PATHS`.
+
+### 6. Déployer
+
+```bash
+git add . && git commit -m "feat: module Nouveau" && git push
+```
+Vercel redéploie automatiquement.
+
+---
 
 ## Installation sur mobile
 
 ### iPhone (Safari)
-1. Ouvrir l'URL dans Safari.
-2. Bouton Partager → "Sur l'écran d'accueil".
-3. L'app s'installe avec l'icône et le nom "Remise en forme".
+1. Ouvrir l'URL Vercel dans Safari
+2. Bouton Partager → **"Sur l'écran d'accueil"**
+3. L'app s'installe sous le nom "Remise en forme" avec l'icône orange "50+"
 
 ### Android (Chrome)
-1. Ouvrir l'URL dans Chrome.
-2. Bannière "Ajouter à l'écran d'accueil" (ou menu ⋮ → Installer l'application).
+1. Ouvrir l'URL dans Chrome
+2. Menu ⋮ → **Installer l'application**
+
+---
 
 ## Développement local
 
-Serveur local requis pour le Service Worker (ne fonctionne pas en `file://`) :
-
 ```bash
-# Python 3
-python3 -m http.server 8080
-
-# Node.js (npx)
-npx serve .
+python3 -m http.server 8099
+# → http://localhost:8099
 ```
 
-Puis ouvrir `http://localhost:8080` dans le navigateur.
+> Note : les appels à `/api/analyser-repas` ne fonctionneront pas en local sans un serveur Node (les fonctions Vercel nécessitent `vercel dev`).
 
-## Génération des icônes
-
-Les icônes `icons/icon-192.png` et `icons/icon-512.png` doivent être créées manuellement.  
-Outils recommandés : [PWA Builder](https://www.pwabuilder.com/) (génère toutes les tailles à partir d'un SVG) ou Figma/Sketch export.
-
-Format attendu : carré, fond plein, marge intérieure de ~10 % (pour le masque Android).
+```bash
+# Avec Vercel CLI (nécessite vercel login)
+vercel dev
+# → http://localhost:3000 avec les fonctions serverless actives
+```

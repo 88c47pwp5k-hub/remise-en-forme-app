@@ -2,4 +2,6 @@ node_modules/
 package.json
 package-lock.json
 test-pwa.mjs
+test-nutrition.mjs
 screenshot-*.png
+.vercel/

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ea580c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="apple-touch-icon" href="../icons/icon-192-v2.png" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <title>Nutrition — Remise en forme</title>
+  <style>
+    body { padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px)); }
+
+    /* ── Sections repas ── */
+    .repas-section {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+    }
+    .repas-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-sm);
+    }
+    .repas-titre {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      font-weight: 700;
+      font-size: var(--font-size-base);
+    }
+    .repas-icone { font-size: 20px; }
+    .repas-statut {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+      min-height: 20px;
+    }
+    .repas-statut.analyse { color: var(--text-primary); }
+
+    .btn-camera {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: 7px 14px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border: none;
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .btn-camera:hover { background: var(--accent); color: white; }
+    .btn-camera input[type="file"] { display: none; }
+
+    /* Badge catégories */
+    .categories-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+    }
+    .cat-badge {
+      font-size: var(--font-size-xs);
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+    .cat-badge.ok  { background: #dcfce7; color: #15803d; }
+    .cat-badge.nok { background: #fee2e2; color: #b91c1c; }
+
+    /* Panneau confirmation analyse */
+    .analyse-panel {
+      display: none;
+      margin-top: var(--space-sm);
+      background: var(--surface-bg);
+      border-radius: var(--radius-sm);
+      padding: var(--space-md);
+      border: 1px solid var(--disabled-border);
+    }
+    .analyse-panel.visible { display: block; }
+    .analyse-panel .aliments-list {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin: var(--space-xs) 0 var(--space-sm);
+    }
+    .analyse-actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    .btn-confirmer {
+      flex: 1;
+      padding: 9px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+    }
+    .btn-corriger {
+      flex: 1;
+      padding: 9px;
+      background: var(--surface-card);
+      color: var(--text-secondary);
+      border: 1px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+    }
+
+    /* Loader */
+    .analyse-loading {
+      display: none;
+      align-items: center;
+      gap: var(--space-sm);
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      padding: var(--space-sm) 0;
+    }
+    .analyse-loading.visible { display: flex; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid var(--disabled-border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* ── Alcool ── */
+    .counter-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+    .counter-label {
+      font-weight: 700;
+      font-size: var(--font-size-base);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .counter-controls {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+    .counter-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-light);
+      background: var(--surface-card);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition), border-color var(--transition);
+      line-height: 1;
+    }
+    .counter-btn:hover { background: var(--accent-light); }
+    .counter-btn:disabled { opacity: 0.3; cursor: default; }
+    .counter-value {
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      min-width: 28px;
+      text-align: center;
+    }
+    .counter-max {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    /* ── Sommeil ── */
+    .sleep-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+    }
+    .sleep-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-md);
+    }
+    .sleep-label {
+      font-weight: 700;
+      font-size: var(--font-size-base);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .sleep-value-display {
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .sleep-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--disabled-border);
+      outline: none;
+    }
+    .sleep-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+    .sleep-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+    }
+
+    /* ── Bilan ── */
+    .bilan-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+    .bilan-titre {
+      font-weight: 700;
+      font-size: var(--font-size-base);
+      margin-bottom: var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .bilan-rows { display: flex; flex-direction: column; gap: var(--space-sm); }
+    .bilan-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+    }
+    .bilan-row.vide   { background: var(--disabled-bg); color: var(--text-muted); }
+    .bilan-row.vert   { background: #dcfce7; color: #15803d; }
+    .bilan-row.orange { background: #ffedd5; color: #c2410c; }
+    .bilan-row.rouge  { background: #fee2e2; color: #b91c1c; }
+
+    .bilan-global {
+      margin-top: var(--space-md);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      text-align: center;
+      font-weight: 800;
+      font-size: var(--font-size-lg);
+    }
+    .bilan-global.vide   { background: var(--disabled-bg); color: var(--text-muted); }
+    .bilan-global.vert   { background: #dcfce7; color: #15803d; }
+    .bilan-global.orange { background: #ffedd5; color: #c2410c; }
+    .bilan-global.rouge  { background: #fee2e2; color: #b91c1c; }
+
+    .mention-legale {
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0 var(--space-md) var(--space-md);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header" role="banner">
+  <a href="../index.html" class="back-btn" aria-label="Retour à l'accueil">←</a>
+  <div>
+    <h1>Nutrition</h1>
+    <p class="subtitle">Suivi du jour</p>
+  </div>
+</header>
+
+<main class="page-main" id="main-content">
+
+  <!-- ── REPAS ── -->
+  <div id="repas-matin"  class="repas-section" data-repas="matin"></div>
+  <div id="repas-midi"   class="repas-section" data-repas="midi"></div>
+  <div id="repas-soir"   class="repas-section" data-repas="soir"></div>
+
+  <!-- ── ALCOOL ── -->
+  <div class="counter-card">
+    <div>
+      <div class="counter-label"><span>🍷</span> Alcool aujourd'hui</div>
+      <div class="counter-max" id="alcool-max">/ 2 verres recommandés</div>
+    </div>
+    <div class="counter-controls">
+      <button class="counter-btn" id="alcool-moins" aria-label="Retirer un verre">−</button>
+      <span class="counter-value" id="alcool-val">0</span>
+      <button class="counter-btn" id="alcool-plus"  aria-label="Ajouter un verre">+</button>
+    </div>
+  </div>
+
+  <!-- ── SOMMEIL ── -->
+  <div class="sleep-card">
+    <div class="sleep-header">
+      <div class="sleep-label"><span>🌙</span> Sommeil hier</div>
+      <div class="sleep-value-display"><span id="sleep-val">7</span> h</div>
+    </div>
+    <input type="range" class="sleep-slider" id="sleep-slider"
+           min="0" max="12" step="0.5" value="7"
+           aria-label="Heures de sommeil" />
+    <div class="sleep-ticks">
+      <span>0 h</span><span>3 h</span><span>6 h</span><span>9 h</span><span>12 h</span>
+    </div>
+  </div>
+
+  <!-- ── BILAN ── -->
+  <div class="bilan-card">
+    <div class="bilan-titre">📊 Bilan du jour</div>
+    <div class="bilan-rows">
+      <div class="bilan-row vide" id="bilan-repas">🥗 Repas — en attente</div>
+      <div class="bilan-row vide" id="bilan-alcool">🍷 Alcool — en attente</div>
+      <div class="bilan-row vide" id="bilan-sommeil">🌙 Sommeil — en attente</div>
+    </div>
+    <div class="bilan-global vide" id="bilan-global">—</div>
+  </div>
+
+  <p class="mention-legale">
+    Ces repères sont indicatifs et à titre informatif uniquement.<br>
+    Ils ne remplacent pas un avis médical ou nutritionnel professionnel.
+  </p>
+
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  const TODAY = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const KEY   = `nutrition-${TODAY}`;
+
+  // ─── État ──────────────────────────────────────────────────────────────────
+  let state = {
+    repas: {
+      matin: null,  // null = pas rempli, objet analyse = rempli
+      midi:  null,
+      soir:  null,
+    },
+    alcool: 0,
+    sommeil: 7,
+  };
+
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s) state = s;
+    } catch {}
+  }
+  function save() {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  }
+
+  // ─── Repas ─────────────────────────────────────────────────────────────────
+  const REPAS_CONFIG = {
+    matin: { label: 'Matin',   icone: '🌅', heure: '7h – 10h'  },
+    midi:  { label: 'Midi',    icone: '☀️',  heure: '12h – 14h' },
+    soir:  { label: 'Soir',    icone: '🌆', heure: '19h – 21h' },
+  };
+
+  function buildRepasSection(repasId) {
+    const cfg  = REPAS_CONFIG[repasId];
+    const data = state.repas[repasId];
+    const el   = document.getElementById(`repas-${repasId}`);
+
+    el.innerHTML = `
+      <div class="repas-header">
+        <div class="repas-titre">
+          <span class="repas-icone">${cfg.icone}</span>
+          ${cfg.label} <small style="color:var(--text-muted);font-weight:400;font-size:var(--font-size-xs)">${cfg.heure}</small>
+        </div>
+        <label class="btn-camera">
+          📷 Photo
+          <input type="file" accept="image/*" capture="environment" data-repas="${repasId}" />
+        </label>
+      </div>
+      <div class="repas-statut ${data ? 'analyse' : ''}" id="statut-${repasId}">
+        ${data ? renderStatut(data) : 'Pas encore ajouté'}
+      </div>
+      <div class="categories-badges" id="badges-${repasId}">
+        ${data ? renderBadges(data) : ''}
+      </div>
+      <div class="analyse-loading" id="loading-${repasId}">
+        <div class="spinner"></div> Analyse en cours…
+      </div>
+      <div class="analyse-panel" id="panel-${repasId}"></div>
+    `;
+
+    el.querySelector('input[type="file"]').addEventListener('change', onPhotoChange);
+  }
+
+  function renderStatut(data) {
+    if (data.erreur) return `⚠️ ${data.erreur}`;
+    const kcal = data.calories_approx ? ` · ~${data.calories_approx} kcal` : '';
+    return `${data.commentaire ?? ''}${kcal}`;
+  }
+
+  function renderBadges(data) {
+    if (!data.categories) return '';
+    const map = { legumes_fruits: '🥦 Légumes/fruits', proteines: '🍗 Protéines', grains_entiers: '🌾 Grains entiers' };
+    return Object.entries(map).map(([k, label]) =>
+      `<span class="cat-badge ${data.categories[k] ? 'ok' : 'nok'}">${label}</span>`
+    ).join('');
+  }
+
+  async function onPhotoChange(e) {
+    const repasId = e.target.dataset.repas;
+    const file    = e.target.files[0];
+    if (!file) return;
+
+    // Afficher loader
+    document.getElementById(`loading-${repasId}`).classList.add('visible');
+    document.getElementById(`panel-${repasId}`).classList.remove('visible');
+
+    try {
+      const base64 = await toBase64(file);
+      const analyse = await appellerAPI(base64, file.type);
+
+      document.getElementById(`loading-${repasId}`).classList.remove('visible');
+      afficherPanelConfirmation(repasId, analyse);
+    } catch (err) {
+      document.getElementById(`loading-${repasId}`).classList.remove('visible');
+      document.getElementById(`statut-${repasId}`).textContent = `Erreur : ${err.message}`;
+    }
+  }
+
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function appellerAPI(imageBase64, mimeType) {
+    const resp = await fetch('/api/analyser-repas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64, mimeType }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: resp.statusText }));
+      throw new Error(err.error ?? 'Erreur API');
+    }
+    return resp.json();
+  }
+
+  function afficherPanelConfirmation(repasId, analyse) {
+    const panel = document.getElementById(`panel-${repasId}`);
+    const alimentsStr = analyse.aliments?.join(', ') ?? '—';
+    const badgesHTML  = renderBadges(analyse);
+
+    panel.innerHTML = `
+      <strong>Aliments détectés :</strong>
+      <div class="aliments-list">${alimentsStr}</div>
+      <div class="categories-badges">${badgesHTML}</div>
+      <div class="analyse-actions" style="margin-top:var(--space-sm)">
+        <button class="btn-confirmer" data-repas="${repasId}">✅ Confirmer</button>
+        <button class="btn-corriger"  data-repas="${repasId}">✏️ Corriger</button>
+      </div>
+    `;
+    panel.classList.add('visible');
+
+    // Stocker temporairement pour confirmation
+    panel.dataset.analyse = JSON.stringify(analyse);
+
+    panel.querySelector('.btn-confirmer').addEventListener('click', () => {
+      confirmerRepas(repasId, JSON.parse(panel.dataset.analyse));
+    });
+    panel.querySelector('.btn-corriger').addEventListener('click', () => {
+      ouvrirCorrection(repasId, panel);
+    });
+  }
+
+  function confirmerRepas(repasId, analyse) {
+    state.repas[repasId] = analyse;
+    save();
+    buildRepasSection(repasId);
+    updateBilan();
+  }
+
+  function ouvrirCorrection(repasId, panel) {
+    const analyse = JSON.parse(panel.dataset.analyse);
+    panel.innerHTML = `
+      <label style="font-size:var(--font-size-sm);font-weight:600;display:block;margin-bottom:var(--space-xs)">
+        Aliments (séparés par des virgules) :
+      </label>
+      <textarea id="correction-${repasId}" rows="2"
+        style="width:100%;border:1px solid var(--disabled-border);border-radius:var(--radius-sm);padding:var(--space-sm);font-size:var(--font-size-sm);resize:vertical"
+      >${analyse.aliments?.join(', ') ?? ''}</textarea>
+      <div class="analyse-actions" style="margin-top:var(--space-sm)">
+        <button class="btn-confirmer" data-repas="${repasId}">✅ Enregistrer</button>
+      </div>
+    `;
+    panel.querySelector('.btn-confirmer').addEventListener('click', () => {
+      const texte = document.getElementById(`correction-${repasId}`).value;
+      analyse.aliments = texte.split(',').map(s => s.trim()).filter(Boolean);
+      analyse.commentaire = 'Modifié manuellement';
+      confirmerRepas(repasId, analyse);
+    });
+  }
+
+  // ─── Alcool ────────────────────────────────────────────────────────────────
+  const alcoolVal   = document.getElementById('alcool-val');
+  const alcoolMoins = document.getElementById('alcool-moins');
+  const alcoolPlus  = document.getElementById('alcool-plus');
+
+  function renderAlcool() {
+    alcoolVal.textContent = state.alcool;
+    alcoolMoins.disabled = state.alcool <= 0;
+    alcoolPlus.disabled  = state.alcool >= 20;
+  }
+
+  alcoolPlus.addEventListener('click', () => {
+    state.alcool++;
+    save(); renderAlcool(); updateBilan();
+  });
+  alcoolMoins.addEventListener('click', () => {
+    if (state.alcool > 0) { state.alcool--; save(); renderAlcool(); updateBilan(); }
+  });
+
+  // ─── Sommeil ───────────────────────────────────────────────────────────────
+  const sleepSlider = document.getElementById('sleep-slider');
+  const sleepVal    = document.getElementById('sleep-val');
+
+  function renderSommeil() {
+    sleepSlider.value     = state.sommeil;
+    sleepVal.textContent  = state.sommeil % 1 === 0 ? state.sommeil : state.sommeil.toFixed(1);
+  }
+
+  sleepSlider.addEventListener('input', () => {
+    state.sommeil = parseFloat(sleepSlider.value);
+    sleepVal.textContent = state.sommeil % 1 === 0 ? state.sommeil : state.sommeil.toFixed(1);
+    save(); updateBilan();
+  });
+
+  // ─── Bilan ────────────────────────────────────────────────────────────────
+  function scoreSommeil(h) {
+    if (h >= 7 && h <= 9)  return 'vert';
+    if ((h >= 6 && h < 7) || (h > 9 && h <= 10)) return 'orange';
+    return 'rouge';
+  }
+
+  function scoreAlcool(v) {
+    if (v <= 2)  return 'vert';
+    if (v <= 4)  return 'orange';
+    return 'rouge';
+  }
+
+  function scoreRepas() {
+    const repasListe = Object.values(state.repas).filter(Boolean);
+    const equilibres = repasListe.filter(r =>
+      r.categories?.legumes_fruits && r.categories?.proteines && r.categories?.grains_entiers
+    ).length;
+    if (equilibres >= 2) return 'vert';
+    if (equilibres === 1) return 'orange';
+    if (repasListe.length === 0) return null; // pas encore de repas = on ne juge pas encore
+    return 'rouge';
+  }
+
+  const SCORE_LABEL = { vert: '✅', orange: '⚠️', rouge: '❌', null: '—' };
+  const SCORE_TEXTE = {
+    repas:   { vert: 'Repas équilibrés 🎉', orange: 'Partiellement équilibré', rouge: 'Peu équilibré' },
+    alcool:  { vert: 'Alcool OK', orange: 'Modéré', rouge: 'Dépassement' },
+    sommeil: { vert: 'Sommeil optimal', orange: 'Sommeil court/long', rouge: 'Sommeil insuffisant/excessif' },
+  };
+
+  function updateBilan() {
+    const sRepas   = scoreRepas();
+    const sAlcool  = scoreAlcool(state.alcool);
+    const sSommeil = scoreSommeil(state.sommeil);
+
+    setRow('bilan-repas',   sRepas,   sRepas   ? `🥗 ${SCORE_TEXTE.repas[sRepas]}` : '🥗 Repas — en attente');
+    setRow('bilan-alcool',  sAlcool,  sAlcool  ? `🍷 ${SCORE_TEXTE.alcool[sAlcool]}` : '🍷 Alcool — en attente');
+    setRow('bilan-sommeil', sSommeil, sSommeil ? `🌙 ${SCORE_TEXTE.sommeil[sSommeil]}` : '🌙 Sommeil — en attente');
+
+    // Global
+    const scores = [sRepas, sAlcool, sSommeil].filter(Boolean);
+    let global = 'vide';
+    let globalTexte = '—';
+    if (scores.length > 0) {
+      if (scores.includes('rouge'))  { global = 'rouge';  globalTexte = '❌ Journée difficile — continue, demain c\'est mieux !'; }
+      else if (scores.includes('orange')) { global = 'orange'; globalTexte = '⚠️ Bonne journée — quelques points à améliorer'; }
+      else { global = 'vert'; globalTexte = '✅ Excellente journée — bravo !'; }
+    }
+    const bg = document.getElementById('bilan-global');
+    bg.className = `bilan-global ${global}`;
+    bg.textContent = globalTexte;
+  }
+
+  function setRow(id, score, texte) {
+    const el = document.getElementById(id);
+    el.className = `bilan-row ${score ?? 'vide'}`;
+    el.textContent = texte;
+  }
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
+  load();
+  ['matin', 'midi', 'soir'].forEach(buildRepasSection);
+  renderAlcool();
+  renderSommeil();
+  updateBilan();
+})();
+</script>
+
+</body>
+</html>
