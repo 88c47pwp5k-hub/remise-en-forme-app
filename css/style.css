@@ -8,9 +8,9 @@
   --surface-card-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 1px rgba(0,0,0,0.06);
 
   /* Accent bleu */
-  --accent: #2563eb;
-  --accent-light: #dbeafe;
-  --accent-dark: #1d4ed8;
+  --accent: #ea580c;
+  --accent-light: #ffedd5;
+  --accent-dark: #c2410c;
 
   /* Texte */
   --text-primary: #111827;
