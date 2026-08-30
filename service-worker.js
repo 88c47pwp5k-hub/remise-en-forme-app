@@ -1,33 +1,32 @@
 // Service Worker — Remise en forme PWA
 // Stratégie : Cache First pour les assets statiques, Network First pour les données JSON
 
-const CACHE_NAME = 'remise-en-forme-v1';
+const CACHE_NAME = 'remise-en-forme-v2';
 
-// Fichiers à mettre en cache immédiatement à l'installation
-const PRECACHE_URLS = [
-  '/index.html',
-  '/modules/exercice.html',
-  '/data/exercice.json',
-  '/css/style.css',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+// Dériver le chemin de base depuis la portée du SW (fonctionne en local ET sur GitHub Pages)
+// Ex: '/' en local, '/remise-en-forme-app/' sur GitHub Pages
+const BASE = new URL(self.registration.scope).pathname;
+
+const PRECACHE_PATHS = [
+  '',                        // index.html (= BASE seul)
+  'modules/exercice.html',
+  'data/exercice.json',
+  'css/style.css',
+  'manifest.json',
+  'icons/icon-192.png',
+  'icons/icon-512.png',
 ];
+
+const PRECACHE_URLS = PRECACHE_PATHS.map(p => BASE + p);
 
 // ---- Installation : mise en cache initiale ----
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(PRECACHE_URLS.map(url => {
-        // Utiliser un Request sans CORS strict pour les ressources locales
-        return new Request(url, { cache: 'reload' });
-      })).catch(err => {
-        // Pas bloquant : si une ressource manque, on continue
-        console.warn('[SW] Précache partiel :', err);
-      });
+      return cache.addAll(PRECACHE_URLS.map(url => new Request(url, { cache: 'reload' })))
+        .catch(err => console.warn('[SW] Précache partiel :', err));
     })
   );
-  // Prendre le contrôle immédiatement
   self.skipWaiting();
 });
 
@@ -35,10 +34,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -49,24 +45,21 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Ignorer les requêtes non-GET et les extensions de navigateur
   if (request.method !== 'GET' || url.protocol === 'chrome-extension:') return;
 
-  // Pour les données JSON → Network First (pour pouvoir les mettre à jour facilement)
+  // JSON → Network First (données éditables sans changer le cache)
   if (url.pathname.endsWith('.json')) {
     event.respondWith(networkFirst(request));
     return;
   }
 
-  // Pour tout le reste → Cache First (perf optimale, offline)
+  // Tout le reste → Cache First (offline + perf)
   event.respondWith(cacheFirst(request));
 });
 
-// Cache First : sert depuis le cache, réseau en fallback
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
-
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -75,13 +68,11 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    // Ressource hors ligne non cachée — retourner une page d'erreur minimale
     return new Response('<h1>Hors ligne</h1><p>Reconnecte-toi pour charger cette page.</p>',
       { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   }
 }
 
-// Network First : réseau prioritaire, cache en fallback
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
