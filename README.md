@@ -22,7 +22,7 @@ remise-en-forme-app/
 ├── modules/
 │   ├── exercice.html         ← Module HIIT avec timer plein écran
 │   ├── etirement.html        ← Module Étirement — timer réutilisé, icônes Tabler
-│   ├── hydratation.html      ← Module Hydratation — compteur ml, objectif, historique localStorage
+│   ├── hydratation.html      ← Module Hydratation — compteur ml, bouton Café (ti-coffee +355 ml hydratation +5 kcal nutrition, avec Sugartwin), objectif, historique localStorage
 │   ├── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil + pas + calories Mifflin-St Jeor)
 │   ├── suivi.html            ← Module Suivi corporel — tour de taille/poids, graphique CSS, 1 mesure/semaine
 │   └── portugais.html        ← Module Portugais — vocabulaire Brésil (SpeechSynthesis)

@@ -8,6 +8,8 @@
   <link rel="manifest" href="../manifest.json" />
   <link rel="apple-touch-icon" href="../icons/icon-192-v2.png" />
   <link rel="stylesheet" href="../css/style.css" />
+  <!-- Tabler Icons (webfont) — licence MIT -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
   <title>Nutrition — Remise en forme</title>
   <style>
     body { padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px)); }
@@ -367,6 +369,74 @@
       padding: 0 var(--space-md) var(--space-md);
       line-height: 1.5;
     }
+
+    /* ── Sélecteur type de boisson ── */
+    .alcool-picker {
+      display: none;
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+      border: 2px solid var(--accent-light);
+    }
+    .alcool-picker.visible { display: block; }
+    .picker-subtitle {
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+      text-align: center;
+    }
+    .picker-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+    .picker-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: var(--space-md) var(--space-sm);
+      background: var(--surface-bg);
+      border: 2px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .picker-btn:hover { background: var(--accent-light); border-color: var(--accent); }
+    .picker-btn .ti {
+      font-size: 28px;
+      color: var(--accent);
+    }
+    .picker-nom {
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .picker-detail {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+    }
+    .picker-mention {
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+      margin-bottom: var(--space-sm);
+    }
+    .picker-cancel {
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -395,8 +465,37 @@
     <div class="counter-controls">
       <button class="counter-btn" id="alcool-moins" aria-label="Retirer un verre">−</button>
       <span class="counter-value" id="alcool-val">0</span>
-      <button class="counter-btn" id="alcool-plus"  aria-label="Ajouter un verre">+</button>
+      <button class="counter-btn" id="alcool-plus"  aria-label="Ajouter un verre">+1 verre</button>
     </div>
+  </div>
+
+  <!-- ── SÉLECTEUR TYPE BOISSON ── -->
+  <div class="alcool-picker" id="alcool-picker">
+    <div class="picker-subtitle">Quel type de boisson ?</div>
+    <div class="picker-grid">
+      <button class="picker-btn" data-type="biere" data-kcal="150">
+        <i class="ti ti-beer" aria-hidden="true"></i>
+        <span class="picker-nom">Bière</span>
+        <span class="picker-detail">~150 kcal / 330 ml</span>
+      </button>
+      <button class="picker-btn" data-type="vin" data-kcal="125">
+        <i class="ti ti-glass-full" aria-hidden="true"></i>
+        <span class="picker-nom">Vin</span>
+        <span class="picker-detail">~125 kcal / 150 ml</span>
+      </button>
+      <button class="picker-btn" data-type="spiritueux" data-kcal="100">
+        <i class="ti ti-bottle" aria-hidden="true"></i>
+        <span class="picker-nom">Spiritueux</span>
+        <span class="picker-detail">~100 kcal / 45 ml</span>
+      </button>
+      <button class="picker-btn" data-type="cocktail" data-kcal="220">
+        <i class="ti ti-glass-cocktail" aria-hidden="true"></i>
+        <span class="picker-nom">Cocktail</span>
+        <span class="picker-detail">~220 kcal / verre</span>
+      </button>
+    </div>
+    <p class="picker-mention">Estimations moyennes — à titre indicatif uniquement</p>
+    <button class="picker-cancel" id="picker-cancel">Annuler</button>
   </div>
 
   <!-- ── SOMMEIL ── -->
@@ -480,15 +579,23 @@
       midi:  null,
       soir:  null,
     },
-    alcool: 0,
+    alcool: [],
     sommeil: 7,
     pas: null,
+    calories_cafe: 0,
   };
 
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s) state = s;
+      if (s) {
+        state = { ...state, ...s, repas: { ...state.repas, ...(s.repas || {}) } };
+        // Migration : ancien format alcool = entier → tableau
+        if (typeof state.alcool === 'number') {
+          state.alcool = Array.from({ length: state.alcool }, () => ({ type: 'inconnu', kcal: 125, heure: '' }));
+        }
+        if (!Array.isArray(state.alcool)) state.alcool = [];
+      }
     } catch {}
   }
   function save() {
@@ -649,19 +756,34 @@
   const alcoolVal   = document.getElementById('alcool-val');
   const alcoolMoins = document.getElementById('alcool-moins');
   const alcoolPlus  = document.getElementById('alcool-plus');
+  const alcoolPicker = document.getElementById('alcool-picker');
 
   function renderAlcool() {
-    alcoolVal.textContent = state.alcool;
-    alcoolMoins.disabled = state.alcool <= 0;
-    alcoolPlus.disabled  = state.alcool >= 20;
+    alcoolVal.textContent    = state.alcool.length;
+    alcoolMoins.disabled     = state.alcool.length <= 0;
+    alcoolPlus.disabled      = state.alcool.length >= 20;
   }
 
-  alcoolPlus.addEventListener('click', () => {
-    state.alcool++;
-    save(); renderAlcool(); updateBilan();
-  });
+  function openPicker() { alcoolPicker.classList.add('visible'); }
+  function closePicker() { alcoolPicker.classList.remove('visible'); }
+
+  alcoolPlus.addEventListener('click', () => { openPicker(); });
+
   alcoolMoins.addEventListener('click', () => {
-    if (state.alcool > 0) { state.alcool--; save(); renderAlcool(); updateBilan(); }
+    if (state.alcool.length > 0) {
+      state.alcool.pop();
+      save(); renderAlcool(); updateBilan();
+    }
+  });
+
+  document.getElementById('picker-cancel').addEventListener('click', closePicker);
+
+  alcoolPicker.querySelectorAll('.picker-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const heure = new Date().toTimeString().slice(0, 5);
+      state.alcool.push({ type: btn.dataset.type, kcal: parseInt(btn.dataset.kcal, 10), heure });
+      save(); renderAlcool(); updateBilan(); closePicker();
+    });
   });
 
   // ─── Sommeil ───────────────────────────────────────────────────────────────
@@ -701,7 +823,6 @@
   const PROFIL_AGE    = 53;
   const PROFIL_TAILLE = 178; // cm
   const POIDS_DEFAUT  = 84;  // kg
-  const KCAL_VERRE    = 100; // kcal par verre d'alcool (estimation standard)
 
   function getPoidsKg() {
     try {
@@ -725,13 +846,14 @@
     return Object.values(state.repas)
       .filter(Boolean)
       .reduce((s, r) => s + (r.calories_approx || 0), 0)
-      + state.alcool * KCAL_VERRE;
+      + state.alcool.reduce((s, v) => s + v.kcal, 0)
+      + (state.calories_cafe || 0);
   }
 
   function renderCalories() {
     const { cible, defaultUsed } = getCibleCalories();
     const total   = getTotalKcal();
-    const hasData = Object.values(state.repas).some(Boolean) || state.alcool > 0;
+    const hasData = Object.values(state.repas).some(Boolean) || state.alcool.length > 0;
 
     document.getElementById('cals-total').textContent = total.toLocaleString('fr-FR');
     document.getElementById('cals-cible').textContent = cible.toLocaleString('fr-FR');
@@ -805,7 +927,7 @@
 
   function updateBilan() {
     const sRepas   = scoreRepas();
-    const sAlcool  = scoreAlcool(state.alcool);
+    const sAlcool  = scoreAlcool(state.alcool.length);
     const sSommeil = scoreSommeil(state.sommeil);
     const sPas     = state.pas !== null ? scorePas(state.pas) : null;
     const sCals    = renderCalories();

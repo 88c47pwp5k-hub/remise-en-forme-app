@@ -21,8 +21,16 @@
 
   <main>
     <section class="home-hero" aria-label="Accueil">
-      <h1>Ta remise en forme 💪</h1>
-      <p class="greeting">Choisis ton module pour aujourd'hui.</p>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--space-sm)">
+        <div>
+          <h1>Ta remise en forme 💪</h1>
+          <p class="greeting">Choisis ton module pour aujourd'hui.</p>
+        </div>
+        <button id="btn-export" type="button" title="Exporter toutes mes données"
+          style="flex-shrink:0;margin-top:4px;padding:6px 12px;background:var(--surface-card);border:1px solid var(--disabled-border);border-radius:var(--radius-full);font-size:var(--font-size-xs);font-weight:700;color:var(--text-secondary);cursor:pointer;white-space:nowrap">
+          💾 Exporter
+        </button>
+      </div>
     </section>
 
     <div class="modules-grid" role="list">
@@ -47,25 +55,25 @@
         <span class="card-sub">Repas · Alcool · Sommeil</span>
       </a>
 
-      <!-- Étirement — bientôt -->
-      <div class="module-card disabled"
-           role="listitem"
-           aria-label="Module Étirement — bientôt disponible">
-        <span class="soon-badge" aria-label="Bientôt disponible">Bientôt</span>
+      <!-- Étirement — actif -->
+      <a href="modules/etirement.html"
+         class="module-card active"
+         role="listitem"
+         aria-label="Module Étirement — routine quotidienne">
         <span class="card-icon" aria-hidden="true">🧘</span>
         <span class="card-label">Étirement</span>
         <span class="card-sub">Mobilité & souplesse</span>
-      </div>
+      </a>
 
-      <!-- Eau — bientôt -->
-      <div class="module-card disabled"
-           role="listitem"
-           aria-label="Module Eau — bientôt disponible">
-        <span class="soon-badge" aria-label="Bientôt disponible">Bientôt</span>
+      <!-- Hydratation — actif -->
+      <a href="modules/hydratation.html"
+         class="module-card active"
+         role="listitem"
+         aria-label="Module Hydratation — suivi eau quotidien">
         <span class="card-icon" aria-hidden="true">💧</span>
         <span class="card-label">Hydratation</span>
         <span class="card-sub">Suivi eau quotidien</span>
-      </div>
+      </a>
 
       <!-- Portugais — actif -->
       <a href="modules/portugais.html"
@@ -77,13 +85,15 @@
         <span class="card-sub">Mots & phrases pour le Brésil</span>
       </a>
 
-      <!-- Ajouter un module — visuel seulement -->
-      <div class="module-card add-card"
-           role="listitem"
-           aria-label="Ajouter un nouveau module (non disponible)">
-        <span class="card-icon" aria-hidden="true">＋</span>
-        <span class="card-label">Ajouter un module</span>
-      </div>
+      <!-- Suivi corporel — actif -->
+      <a href="modules/suivi.html"
+         class="module-card active"
+         role="listitem"
+         aria-label="Module Suivi — tour de taille et poids">
+        <span class="card-icon" aria-hidden="true">📏</span>
+        <span class="card-label">Suivi</span>
+        <span class="card-sub">Tour de taille & poids</span>
+      </a>
 
     </div>
   </main>
@@ -91,10 +101,28 @@
   <script>
     // Enregistrement du Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./service-worker.js').catch(() => {
-        // Pas bloquant si SW non disponible (ex: fichier local)
-      });
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
     }
+
+    // Export localStorage → fichier JSON
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        try { data[key] = JSON.parse(localStorage.getItem(key)); }
+        catch { data[key] = localStorage.getItem(key); }
+      }
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `remise-en-forme-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
   </script>
 
 </body>

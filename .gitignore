@@ -1,7 +1,10 @@
 node_modules/
 package.json
 package-lock.json
-test-pwa.mjs
-test-nutrition.mjs
+test-*.mjs
+test-*.js
+test-screenshots/
 screenshot-*.png
 .vercel/
+.vercel
+.env*

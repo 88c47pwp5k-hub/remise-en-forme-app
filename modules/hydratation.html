@@ -8,6 +8,8 @@
   <link rel="manifest" href="../manifest.json" />
   <link rel="apple-touch-icon" href="../icons/icon-192-v2.png" />
   <link rel="stylesheet" href="../css/style.css" />
+  <!-- Tabler Icons (webfont) — licence MIT, source : tabler.io/icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
   <title>Hydratation — Remise en forme</title>
   <style>
     body { padding-bottom: env(safe-area-inset-bottom); }
@@ -75,8 +77,15 @@
     /* ── Boutons ── */
     .hydra-btns {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: var(--space-sm);
+    }
+    .cafe-mention {
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: calc(var(--space-xs) * -0.5);
+      margin-bottom: var(--space-xs);
     }
 
     .btn-hydra-add {
@@ -435,10 +444,12 @@
     <div class="hydra-btns" role="group" aria-label="Ajouter ou retirer">
       <button class="btn-hydra-add" id="btn-plus250" type="button">+ 250 ml</button>
       <button class="btn-hydra-add" id="btn-plus500" type="button">+ 500 ml</button>
+      <button class="btn-hydra-add" id="btn-cafe" type="button"><i class="ti ti-coffee" aria-hidden="true"></i> Café (12 oz)</button>
       <button class="btn-hydra-remove" id="btn-moins250" type="button" disabled>
         − 250 ml &nbsp;(annuler la dernière)
       </button>
     </div>
+    <p class="cafe-mention">Ajoute 355 ml à l'hydratation, ~5 kcal (avec Sugartwin) au total du jour.</p>
 
     <!-- Historique -->
     <div class="histo-card">
@@ -604,10 +615,26 @@
       render();
     });
 
+    document.getElementById('btn-cafe').addEventListener('click', () => {
+      total += 355;
+      ajouterCaloriesCafe(5);
+      render();
+    });
+
     elBtnMoins.addEventListener('click', () => {
       total = Math.max(0, total - 250);
       render();
     });
+
+    function ajouterCaloriesCafe(kcal) {
+      const today = new Date().toISOString().slice(0, 10);
+      const key   = `nutrition-${today}`;
+      try {
+        const s = JSON.parse(localStorage.getItem(key) || '{}');
+        s.calories_cafe = (s.calories_cafe || 0) + kcal;
+        localStorage.setItem(key, JSON.stringify(s));
+      } catch {}
+    }
 
     // ── Ajuster objectif ──
     const btnToggle   = document.getElementById('btn-objectif-toggle');

@@ -1,7 +1,7 @@
 // Service Worker — Remise en forme PWA
 // Stratégie : Cache First pour les assets statiques, Network First pour les données JSON
 
-const CACHE_NAME = 'remise-en-forme-v2';
+const CACHE_NAME = 'remise-en-forme-v4';
 
 // Dériver le chemin de base depuis la portée du SW (fonctionne en local ET sur GitHub Pages)
 // Ex: '/' en local, '/remise-en-forme-app/' sur GitHub Pages
@@ -10,7 +10,10 @@ const BASE = new URL(self.registration.scope).pathname;
 const PRECACHE_PATHS = [
   '',                        // index.html (= BASE seul)
   'modules/exercice.html',
+  'modules/etirement.html',
+  'modules/hydratation.html',
   'data/exercice.json',
+  'data/etirement.json',
   'css/style.css',
   'manifest.json',
   'icons/icon-192.png',

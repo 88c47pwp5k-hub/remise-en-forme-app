@@ -1,0 +1,67 @@
+{
+  "titre": "Routine d'étirement",
+  "date": "Pratique quotidienne",
+  "exercices": [
+    {
+      "id": "respiration-abdominale",
+      "nom": "Respiration abdominale profonde",
+      "type": "echauffement",
+      "duree_sec": 60,
+      "series": 1,
+      "icone": "ti-lungs",
+      "description": "Inspirez lentement par le nez en gonflant le ventre, retenez 2 secondes, expirez doucement par la bouche.",
+      "conseil": "Posez une main sur le ventre pour sentir le mouvement respiratoire."
+    },
+    {
+      "id": "bras-vers-ciel",
+      "nom": "Bras vers le ciel, étirement des côtes",
+      "type": "reps",
+      "reps": 6,
+      "series": 1,
+      "icone": "ti-arrows-up",
+      "description": "Levez les deux bras simultanément vers le plafond, doigts joints, tirez doucement en étirant les côtes.",
+      "conseil": "Gardez les épaules basses et détendues. Inspirez en montant."
+    },
+    {
+      "id": "torsion-tronc",
+      "nom": "Torsion douce du tronc, assis",
+      "type": "temps",
+      "duree_sec": 30,
+      "series": 2,
+      "repos_sec": 5,
+      "icone": "ti-rotate",
+      "description": "Assis bien droit, pivotez doucement le tronc vers un côté, posez la main opposée sur le genou.",
+      "conseil": "Série 1 : côté droit. Série 2 : côté gauche. Dos allongé."
+    },
+    {
+      "id": "flexion-avant",
+      "nom": "Flexion avant, mains vers les pieds",
+      "type": "temps",
+      "duree_sec": 45,
+      "series": 1,
+      "icone": "ti-arrow-bar-down",
+      "description": "Debout, jambes légèrement fléchies, laissez le buste descendre vers l'avant, bras pendants vers le sol.",
+      "conseil": "Ne forcez pas. Laissez la gravité faire le travail. Respirez lentement."
+    },
+    {
+      "id": "rotation-hanches",
+      "nom": "Rotation lente des hanches",
+      "type": "reps",
+      "reps": 8,
+      "series": 1,
+      "icone": "ti-rotate-clockwise",
+      "description": "Debout, mains sur les hanches. Décrivez de grands cercles avec les hanches, 8 fois dans chaque direction.",
+      "conseil": "Mouvements amples et lents. Genoux légèrement fléchis."
+    },
+    {
+      "id": "respiration-finale",
+      "nom": "Respiration finale, mains sur le ventre",
+      "type": "retour_calme",
+      "duree_sec": 60,
+      "series": 1,
+      "icone": "ti-heart",
+      "description": "Assis ou debout, posez les deux mains sur le ventre. Respirez profondément et relâchez le corps.",
+      "conseil": "Sentez la chaleur de vos mains. Appréciez le calme retrouvé."
+    }
+  ]
+}

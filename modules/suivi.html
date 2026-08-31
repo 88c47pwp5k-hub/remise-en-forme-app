@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ea580c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="apple-touch-icon" href="../icons/icon-192-v2.png" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <title>Suivi — Remise en forme</title>
+  <style>
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    .page-main {
+      padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    /* ── Chiffres clés ── */
+    .suivi-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+    }
+    .metric-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md) var(--space-sm);
+      text-align: center;
+    }
+    .metric-label {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xs);
+    }
+    .metric-val {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -2px;
+      line-height: 1;
+    }
+    .metric-unit {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .metric-delta {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      margin-top: var(--space-xs);
+      color: var(--text-muted);
+    }
+    .metric-delta.baisse { color: var(--success); }
+    .metric-delta.hausse { color: var(--danger); }
+
+    /* ── Graphique ── */
+    .chart-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+    }
+    .chart-title {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+    .chart-empty {
+      text-align: center;
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      font-style: italic;
+      padding: var(--space-md) 0;
+    }
+    .chart-container {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 80px;
+    }
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .chart-bar {
+      width: 100%;
+      background: var(--accent);
+      border-radius: 3px 3px 0 0;
+      min-height: 3px;
+    }
+    .chart-bar.current { background: var(--accent-dark); }
+    .chart-lbl {
+      font-size: 8px;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ── Formulaire ── */
+    .form-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      display: none;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .form-card.open { display: flex; }
+    .form-card-title {
+      font-weight: 700;
+      font-size: var(--font-size-base);
+    }
+    .form-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+    }
+    .field-group { display: flex; flex-direction: column; gap: 4px; }
+    .field-label {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .field-input {
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      color: var(--accent);
+      text-align: center;
+      background: var(--surface-bg);
+      width: 100%;
+    }
+    .field-input:focus { outline: none; border-color: var(--accent); }
+    .form-actions { display: flex; gap: var(--space-sm); }
+    .btn-annuler {
+      flex: 0 0 auto;
+      padding: var(--space-md);
+      background: var(--surface-bg);
+      border: 2px solid var(--disabled-border);
+      border-radius: var(--radius-lg);
+      font-size: var(--font-size-base);
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    /* ── Historique ── */
+    .histo-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+    }
+    .histo-title {
+      font-size: var(--font-size-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+    }
+    .histo-list { display: flex; flex-direction: column; gap: 6px; }
+    .histo-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-sm);
+      background: var(--surface-bg);
+      font-size: var(--font-size-sm);
+    }
+    .histo-date { color: var(--text-secondary); }
+    .histo-vals { font-weight: 700; color: var(--text-primary); }
+    .histo-row.semaine-actuelle { border: 2px solid var(--accent-light); }
+    .histo-empty {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Mention ── */
+    .mesure-mention {
+      text-align: center;
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header" role="banner">
+    <a href="../index.html" class="back-btn" aria-label="Retour à l'accueil">←</a>
+    <div>
+      <h1>Suivi corporel</h1>
+      <p class="subtitle" id="page-subtitle">Évolution depuis le début</p>
+    </div>
+  </header>
+
+  <main class="page-main" id="main-content">
+
+    <div class="session-info" role="note">
+      <span class="info-icon" aria-hidden="true">📏</span>
+      <div class="info-text">
+        <strong id="info-nb-mesures">—</strong>
+        <span id="info-periode">Aucune mesure enregistrée</span>
+      </div>
+    </div>
+
+    <!-- Chiffres clés -->
+    <div class="suivi-metrics">
+      <div class="metric-card">
+        <div class="metric-label">Tour de taille</div>
+        <div><span class="metric-val" id="tt-val">—</span><span class="metric-unit"> po</span></div>
+        <div class="metric-delta" id="tt-delta">&nbsp;</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Poids</div>
+        <div><span class="metric-val" id="poids-val">—</span><span class="metric-unit" id="poids-unit"> lbs</span></div>
+        <div class="metric-delta" id="poids-delta">&nbsp;</div>
+      </div>
+    </div>
+
+    <!-- Graphique tour de taille -->
+    <div class="chart-card">
+      <div class="chart-title">Tour de taille — évolution (po)</div>
+      <div id="chart-body"><p class="chart-empty">Ajoutez au moins une mesure pour voir le graphique.</p></div>
+    </div>
+
+    <!-- Bouton ajouter / modifier -->
+    <button class="btn-primary" id="btn-ajouter" type="button">
+      Ajouter une mesure cette semaine
+    </button>
+
+    <!-- Formulaire (caché par défaut) -->
+    <div class="form-card" id="form-card">
+      <div class="form-card-title" id="form-titre">Nouvelle mesure</div>
+      <div class="form-fields">
+        <div class="field-group">
+          <label class="field-label" for="input-tt">Tour de taille (po)</label>
+          <input class="field-input" id="input-tt" type="number"
+                 min="20" max="60" step="0.1"
+                 inputmode="decimal" placeholder="33.5" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="input-poids">Poids (lbs) <span style="font-weight:400;text-transform:none">opt.</span></label>
+          <input class="field-input" id="input-poids" type="number"
+                 min="80" max="400" step="0.5"
+                 inputmode="decimal" placeholder="185" />
+        </div>
+      </div>
+      <div id="form-erreur" style="color:var(--danger);font-size:var(--font-size-sm);display:none"></div>
+      <div class="form-actions">
+        <button class="btn-primary" id="btn-sauvegarder" type="button" style="flex:1">Enregistrer</button>
+        <button class="btn-annuler" id="btn-annuler" type="button">Annuler</button>
+      </div>
+    </div>
+
+    <!-- Historique -->
+    <div class="histo-card">
+      <div class="histo-title">Historique</div>
+      <div class="histo-list" id="histo-list">
+        <p class="histo-empty">Aucune mesure pour l'instant.</p>
+      </div>
+    </div>
+
+    <p class="mesure-mention">
+      Mesure le tour de taille au niveau du nombril,<br>
+      le matin à jeun pour plus de cohérence.
+    </p>
+
+  </main>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const LS_KEY = 'suivi-mesures';
+
+    // ── Semaine (lundi de la semaine courante comme clé) ──────────────
+    function lundiSemaine(d = new Date()) {
+      const date = new Date(d);
+      date.setHours(0, 0, 0, 0);
+      const jour = date.getDay() || 7; // lun=1 … dim=7
+      date.setDate(date.getDate() - jour + 1);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatDateCourte(isoStr) {
+      const [y, m, j] = isoStr.split('-');
+      return `${j}/${m}`;
+    }
+
+    function formatDateComplete(isoStr) {
+      const d = new Date(isoStr + 'T12:00:00');
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // ── État ──────────────────────────────────────────────────────────
+    let mesures = [];   // tri croissant par semaine
+
+    function charger() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) mesures = JSON.parse(raw);
+        mesures.sort((a, b) => a.semaine.localeCompare(b.semaine));
+      } catch { mesures = []; }
+    }
+
+    function sauvegarderLS() {
+      localStorage.setItem(LS_KEY, JSON.stringify(mesures));
+    }
+
+    // ── Rendu global ──────────────────────────────────────────────────
+    function render() {
+      renderBanner();
+      renderMetrics();
+      renderGraphique();
+      renderHistorique();
+      renderBouton();
+    }
+
+    function renderBanner() {
+      const nb = mesures.length;
+      document.getElementById('info-nb-mesures').textContent =
+        nb === 0 ? 'Aucune mesure' : `${nb} mesure${nb > 1 ? 's' : ''} enregistrée${nb > 1 ? 's' : ''}`;
+      if (nb >= 2) {
+        const debut = formatDateComplete(mesures[0].date);
+        const fin   = formatDateComplete(mesures[nb - 1].date);
+        document.getElementById('info-periode').textContent = `Du ${debut} au ${fin}`;
+      } else if (nb === 1) {
+        document.getElementById('info-periode').textContent = `Depuis le ${formatDateComplete(mesures[0].date)}`;
+      } else {
+        document.getElementById('info-periode').textContent = 'Ajoutez votre première mesure';
+      }
+    }
+
+    function renderMetrics() {
+      const derniere  = mesures[mesures.length - 1] ?? null;
+      const premiere  = mesures[0] ?? null;
+
+      // Tour de taille
+      const ttEl    = document.getElementById('tt-val');
+      const ttDelta = document.getElementById('tt-delta');
+      if (derniere) {
+        ttEl.textContent = derniere.tour_taille_po;
+        if (premiere && premiere !== derniere) {
+          const d = (derniere.tour_taille_po - premiere.tour_taille_po).toFixed(1);
+          const signe = d < 0 ? '−' : '+';
+          ttDelta.textContent = `${signe}${Math.abs(d)} po depuis le début`;
+          ttDelta.className = `metric-delta ${d < 0 ? 'baisse' : 'hausse'}`;
+        } else {
+          ttDelta.textContent = 'Première mesure';
+          ttDelta.className = 'metric-delta';
+        }
+      } else {
+        ttEl.textContent = '—';
+        ttDelta.textContent = ' ';
+        ttDelta.className = 'metric-delta';
+      }
+
+      // Poids
+      const poidsEl    = document.getElementById('poids-val');
+      const poidsDelta = document.getElementById('poids-delta');
+      const poidsUnit  = document.getElementById('poids-unit');
+      const derPoids   = mesures.slice().reverse().find(m => m.poids_lbs != null) ?? null;
+      const prePoids   = mesures.find(m => m.poids_lbs != null) ?? null;
+
+      if (derPoids) {
+        poidsEl.textContent  = derPoids.poids_lbs;
+        poidsUnit.textContent = ' lbs';
+        if (prePoids && prePoids !== derPoids) {
+          const d = (derPoids.poids_lbs - prePoids.poids_lbs).toFixed(1);
+          const signe = d < 0 ? '−' : '+';
+          poidsDelta.textContent = `${signe}${Math.abs(d)} lbs depuis le début`;
+          poidsDelta.className = `metric-delta ${d < 0 ? 'baisse' : 'hausse'}`;
+        } else {
+          poidsDelta.textContent = 'Première mesure';
+          poidsDelta.className = 'metric-delta';
+        }
+      } else {
+        poidsEl.textContent = '—';
+        poidsUnit.textContent = '';
+        poidsDelta.textContent = ' ';
+      }
+    }
+
+    function renderGraphique() {
+      const el = document.getElementById('chart-body');
+      if (mesures.length === 0) {
+        el.innerHTML = '<p class="chart-empty">Ajoutez au moins une mesure pour voir le graphique.</p>';
+        return;
+      }
+
+      const vals    = mesures.map(m => m.tour_taille_po);
+      const minVal  = Math.min(...vals);
+      const maxVal  = Math.max(...vals);
+      const range   = maxVal - minVal;
+      const semActuelle = lundiSemaine();
+
+      const cols = mesures.map((m, i) => {
+        // Hauteur : 8px min → 68px max (normalisé sur la plage)
+        const h = range === 0 ? 40 : Math.round(8 + ((m.tour_taille_po - minVal) / range) * 60);
+        const isCurrent = m.semaine === semActuelle;
+        return `<div class="chart-col">
+          <div class="chart-bar ${isCurrent ? 'current' : ''}" style="height:${h}px" title="${m.tour_taille_po} po"></div>
+          <div class="chart-lbl">${formatDateCourte(m.date)}</div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `<div class="chart-container">${cols}</div>`;
+    }
+
+    function renderHistorique() {
+      const el = document.getElementById('histo-list');
+      if (mesures.length === 0) {
+        el.innerHTML = '<p class="histo-empty">Aucune mesure pour l\'instant.</p>';
+        return;
+      }
+
+      const semActuelle = lundiSemaine();
+      el.innerHTML = mesures.slice().reverse().map(m => {
+        const isCurrent = m.semaine === semActuelle;
+        const poids = m.poids_lbs != null ? ` · ${m.poids_lbs} lbs` : '';
+        return `<div class="histo-row ${isCurrent ? 'semaine-actuelle' : ''}">
+          <span class="histo-date">${formatDateComplete(m.date)}${isCurrent ? ' ★' : ''}</span>
+          <span class="histo-vals">${m.tour_taille_po} po${poids}</span>
+        </div>`;
+      }).join('');
+    }
+
+    function renderBouton() {
+      const semActuelle = lundiSemaine();
+      const existante = mesures.find(m => m.semaine === semActuelle);
+      const btn = document.getElementById('btn-ajouter');
+      btn.textContent = existante
+        ? 'Modifier la mesure de cette semaine'
+        : 'Ajouter une mesure cette semaine';
+    }
+
+    // ── Formulaire ────────────────────────────────────────────────────
+    const formCard  = document.getElementById('form-card');
+    const btnAjout  = document.getElementById('btn-ajouter');
+    const btnSave   = document.getElementById('btn-sauvegarder');
+    const btnAnnul  = document.getElementById('btn-annuler');
+    const inputTT   = document.getElementById('input-tt');
+    const inputPoids = document.getElementById('input-poids');
+    const formErreur = document.getElementById('form-erreur');
+
+    function ouvrirFormulaire() {
+      const semActuelle = lundiSemaine();
+      const existante = mesures.find(m => m.semaine === semActuelle);
+      document.getElementById('form-titre').textContent = existante
+        ? 'Modifier la mesure de cette semaine'
+        : 'Nouvelle mesure';
+      inputTT.value    = existante ? existante.tour_taille_po : '';
+      inputPoids.value = existante?.poids_lbs != null ? existante.poids_lbs : '';
+      formErreur.style.display = 'none';
+      formCard.classList.add('open');
+      btnAjout.style.display = 'none';
+      inputTT.focus();
+    }
+
+    function fermerFormulaire() {
+      formCard.classList.remove('open');
+      btnAjout.style.display = '';
+    }
+
+    btnAjout.addEventListener('click', ouvrirFormulaire);
+    btnAnnul.addEventListener('click', fermerFormulaire);
+
+    btnSave.addEventListener('click', () => {
+      const tt = parseFloat(inputTT.value);
+      if (!inputTT.value || isNaN(tt) || tt < 20 || tt > 60) {
+        formErreur.textContent = 'Tour de taille requis (entre 20 et 60 po).';
+        formErreur.style.display = 'block';
+        inputTT.focus();
+        return;
+      }
+      const poids = inputPoids.value ? parseFloat(inputPoids.value) : null;
+      if (poids !== null && (isNaN(poids) || poids < 80 || poids > 400)) {
+        formErreur.textContent = 'Poids invalide (entre 80 et 400 lbs).';
+        formErreur.style.display = 'block';
+        inputPoids.focus();
+        return;
+      }
+
+      const semActuelle = lundiSemaine();
+      const idx = mesures.findIndex(m => m.semaine === semActuelle);
+      const entree = {
+        date: new Date().toISOString().slice(0, 10),
+        semaine: semActuelle,
+        tour_taille_po: tt,
+        poids_lbs: poids,
+      };
+
+      if (idx >= 0) {
+        mesures[idx] = entree;
+      } else {
+        mesures.push(entree);
+        mesures.sort((a, b) => a.semaine.localeCompare(b.semaine));
+      }
+
+      sauvegarderLS();
+      fermerFormulaire();
+      render();
+    });
+
+    // Enter dans les champs
+    [inputTT, inputPoids].forEach(el => {
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') btnSave.click(); });
+    });
+
+    // ── Init ──────────────────────────────────────────────────────────
+    charger();
+    render();
+  })();
+  </script>
+
+</body>
+</html>
