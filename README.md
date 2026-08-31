@@ -6,7 +6,7 @@ Application mobile légère (HTML/CSS/JS vanille, zéro dépendance côté clien
 
 ```
 remise-en-forme-app/
-├── index.html                ← Accueil, grille des modules
+├── index.html                ← Accueil, grille des modules + bouton "💾 Exporter" (export localStorage JSON)
 ├── manifest.json             ← PWA (icône, nom, couleurs, standalone)
 ├── service-worker.js         ← Cache offline (Cache First / Network First)
 ├── vercel.json               ← Config Vercel (headers SW, rewrites API)
@@ -22,8 +22,9 @@ remise-en-forme-app/
 ├── modules/
 │   ├── exercice.html         ← Module HIIT avec timer plein écran
 │   ├── etirement.html        ← Module Étirement — timer réutilisé, icônes Tabler
-│   ├── hydratation.html      ← Module Hydratation — compteur ml, objectif, onglet Historique (graphique CSS, sous-onglets Semaine/Mois/Année)
-│   ├── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil)
+│   ├── hydratation.html      ← Module Hydratation — compteur ml, objectif, historique localStorage
+│   ├── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil + pas + calories Mifflin-St Jeor)
+│   ├── suivi.html            ← Module Suivi corporel — tour de taille/poids, graphique CSS, 1 mesure/semaine
 │   └── portugais.html        ← Module Portugais — vocabulaire Brésil (SpeechSynthesis)
 └── api/
     └── analyser-repas.js     ← Fonction serverless Vercel → Claude Vision

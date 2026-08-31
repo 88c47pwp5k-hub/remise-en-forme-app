@@ -281,6 +281,85 @@
     .bilan-global.orange { background: #ffedd5; color: #c2410c; }
     .bilan-global.rouge  { background: #fee2e2; color: #b91c1c; }
 
+    /* ── Pas ── */
+    .pas-input {
+      display: block;
+      width: 100%;
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-xl);
+      font-weight: 800;
+      color: var(--accent);
+      text-align: center;
+      background: var(--surface-bg);
+      margin-bottom: var(--space-xs);
+    }
+    .pas-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .pas-objectif-label {
+      text-align: center;
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    /* ── Calories ── */
+    .cals-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      margin-bottom: var(--space-sm);
+    }
+    .cals-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-xs);
+    }
+    .cals-label {
+      font-weight: 700;
+      font-size: var(--font-size-base);
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .cals-values {
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .cals-bar-track {
+      height: 10px;
+      background: var(--accent-light);
+      border-radius: var(--radius-full);
+      margin: var(--space-sm) 0;
+      overflow: hidden;
+    }
+    .cals-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--accent);
+      transition: width 0.4s ease;
+    }
+    .cals-bar-fill.orange { background: #f97316; }
+    .cals-bar-fill.rouge  { background: var(--danger); }
+    .cals-message {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+    }
+    .cals-message.vert   { color: #15803d; }
+    .cals-message.orange { color: #c2410c; }
+    .cals-message.rouge  { color: #b91c1c; }
+    .cals-note {
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+      font-style: italic;
+    }
+
     .mention-legale {
       font-size: var(--font-size-xs);
       color: var(--text-muted);
@@ -334,6 +413,34 @@
     </div>
   </div>
 
+  <!-- ── PAS ── -->
+  <div class="sleep-card">
+    <div class="sleep-header">
+      <div class="sleep-label"><span>👟</span> Pas aujourd'hui</div>
+      <div class="sleep-value-display"><span id="pas-val-display">—</span></div>
+    </div>
+    <input type="number" class="pas-input" id="pas-input"
+           min="0" max="50000" step="100" value=""
+           inputmode="numeric" placeholder="ex : 8 500"
+           aria-label="Nombre de pas aujourd'hui" />
+    <p class="pas-objectif-label">/ 7 000 pas visés</p>
+  </div>
+
+  <!-- ── CALORIES ── -->
+  <div class="cals-card">
+    <div class="cals-header">
+      <div class="cals-label"><span>🔥</span> Calories aujourd'hui</div>
+      <div class="cals-values">
+        <span id="cals-total">0</span> / <span id="cals-cible">—</span> kcal
+      </div>
+    </div>
+    <div class="cals-bar-track">
+      <div class="cals-bar-fill" id="cals-bar-fill" style="width:0%"></div>
+    </div>
+    <div class="cals-message" id="cals-message"></div>
+    <div class="cals-note" id="cals-note"></div>
+  </div>
+
   <!-- ── BILAN ── -->
   <div class="bilan-card">
     <div class="bilan-titre">📊 Bilan du jour</div>
@@ -341,13 +448,20 @@
       <div class="bilan-row vide" id="bilan-repas">🥗 Repas — en attente</div>
       <div class="bilan-row vide" id="bilan-alcool">🍷 Alcool — en attente</div>
       <div class="bilan-row vide" id="bilan-sommeil">🌙 Sommeil — en attente</div>
+      <div class="bilan-row vide" id="bilan-pas">👟 Pas — en attente</div>
+      <div class="bilan-row vide" id="bilan-calories">🔥 Calories — en attente</div>
     </div>
     <div class="bilan-global vide" id="bilan-global">—</div>
   </div>
 
   <p class="mention-legale">
     Ces repères sont indicatifs et à titre informatif uniquement.<br>
-    Ils ne remplacent pas un avis médical ou nutritionnel professionnel.
+    Ils ne remplacent pas un avis médical ou nutritionnel professionnel.<br><br>
+    Objectif pas : repère issu d'une méta-analyse (<em>The Lancet Public Health</em>, 2022)
+    montrant des bénéfices significatifs dès 7 000 pas/jour — pas un avis médical.<br><br>
+    Calories : calculé selon ton âge (53 ans), taille (178 cm) et ton poids mesuré dans Suivi,
+    formule Mifflin-St Jeor, avec un déficit modéré de 500 kcal/jour pour une perte progressive
+    et durable — pas un avis médical.
   </p>
 
 </main>
@@ -368,6 +482,7 @@
     },
     alcool: 0,
     sommeil: 7,
+    pas: null,
   };
 
   function load() {
@@ -564,6 +679,93 @@
     save(); updateBilan();
   });
 
+  // ─── Pas ──────────────────────────────────────────────────────────────────
+  const pasInput      = document.getElementById('pas-input');
+  const pasValDisplay = document.getElementById('pas-val-display');
+
+  function renderPas() {
+    pasInput.value      = state.pas !== null ? state.pas : '';
+    pasValDisplay.textContent = state.pas !== null
+      ? state.pas.toLocaleString('fr-FR')
+      : '—';
+  }
+
+  pasInput.addEventListener('input', () => {
+    const v = parseInt(pasInput.value, 10);
+    state.pas = (!pasInput.value || isNaN(v) || v < 0) ? null : Math.min(v, 50000);
+    pasValDisplay.textContent = state.pas !== null ? state.pas.toLocaleString('fr-FR') : '—';
+    save(); updateBilan();
+  });
+
+  // ─── Calories ─────────────────────────────────────────────────────────────
+  const PROFIL_AGE    = 53;
+  const PROFIL_TAILLE = 178; // cm
+  const POIDS_DEFAUT  = 84;  // kg
+  const KCAL_VERRE    = 100; // kcal par verre d'alcool (estimation standard)
+
+  function getPoidsKg() {
+    try {
+      const mesures = JSON.parse(localStorage.getItem('suivi-mesures') || '[]')
+        .filter(m => m.poids_lbs != null);
+      if (!mesures.length) return null;
+      mesures.sort((a, b) => b.semaine.localeCompare(a.semaine));
+      return mesures[0].poids_lbs / 2.205;
+    } catch { return null; }
+  }
+
+  function getCibleCalories() {
+    let poidsKg = getPoidsKg();
+    const defaultUsed = poidsKg === null;
+    if (defaultUsed) poidsKg = POIDS_DEFAUT;
+    const bmr  = 10 * poidsKg + 6.25 * PROFIL_TAILLE - 5 * PROFIL_AGE + 5;
+    return { cible: Math.round(bmr * 1.55 - 500), defaultUsed };
+  }
+
+  function getTotalKcal() {
+    return Object.values(state.repas)
+      .filter(Boolean)
+      .reduce((s, r) => s + (r.calories_approx || 0), 0)
+      + state.alcool * KCAL_VERRE;
+  }
+
+  function renderCalories() {
+    const { cible, defaultUsed } = getCibleCalories();
+    const total   = getTotalKcal();
+    const hasData = Object.values(state.repas).some(Boolean) || state.alcool > 0;
+
+    document.getElementById('cals-total').textContent = total.toLocaleString('fr-FR');
+    document.getElementById('cals-cible').textContent = cible.toLocaleString('fr-FR');
+
+    const pct = hasData ? Math.min(100, Math.round((total / cible) * 100)) : 0;
+    const bar = document.getElementById('cals-bar-fill');
+    bar.style.width = pct + '%';
+
+    let score = null;
+    const msgEl = document.getElementById('cals-message');
+    if (hasData) {
+      if (total <= cible)            score = 'vert';
+      else if (total <= cible + 300) score = 'orange';
+      else                           score = 'rouge';
+      const MSGS = {
+        vert:   'Sous ta cible — bon déficit pour la perte de poids',
+        orange: 'Légèrement au-dessus de ta cible',
+        rouge:  'Bien au-dessus de ta cible',
+      };
+      msgEl.textContent = MSGS[score];
+      msgEl.className   = `cals-message ${score}`;
+    } else {
+      msgEl.textContent = '';
+      msgEl.className   = 'cals-message';
+    }
+    bar.className = `cals-bar-fill ${score ?? ''}`;
+
+    document.getElementById('cals-note').textContent = defaultUsed
+      ? 'Estimation par défaut — ajoute une mesure dans Suivi pour plus de précision'
+      : '';
+
+    return score;
+  }
+
   // ─── Bilan ────────────────────────────────────────────────────────────────
   function scoreSommeil(h) {
     if (h >= 7 && h <= 9)  return 'vert';
@@ -588,30 +790,50 @@
     return 'rouge';
   }
 
-  const SCORE_LABEL = { vert: '✅', orange: '⚠️', rouge: '❌', null: '—' };
+  function scorePas(v) {
+    if (v >= 7000) return 'vert';
+    if (v >= 4000) return 'orange';
+    return 'rouge';
+  }
+
   const SCORE_TEXTE = {
     repas:   { vert: 'Repas équilibrés 🎉', orange: 'Partiellement équilibré', rouge: 'Peu équilibré' },
     alcool:  { vert: 'Alcool OK', orange: 'Modéré', rouge: 'Dépassement' },
     sommeil: { vert: 'Sommeil optimal', orange: 'Sommeil court/long', rouge: 'Sommeil insuffisant/excessif' },
+    pas:     { vert: 'Objectif pas atteint 🎉', orange: 'En bonne voie', rouge: 'Activité faible' },
   };
 
   function updateBilan() {
     const sRepas   = scoreRepas();
     const sAlcool  = scoreAlcool(state.alcool);
     const sSommeil = scoreSommeil(state.sommeil);
+    const sPas     = state.pas !== null ? scorePas(state.pas) : null;
+    const sCals    = renderCalories();
 
-    setRow('bilan-repas',   sRepas,   sRepas   ? `🥗 ${SCORE_TEXTE.repas[sRepas]}` : '🥗 Repas — en attente');
-    setRow('bilan-alcool',  sAlcool,  sAlcool  ? `🍷 ${SCORE_TEXTE.alcool[sAlcool]}` : '🍷 Alcool — en attente');
-    setRow('bilan-sommeil', sSommeil, sSommeil ? `🌙 ${SCORE_TEXTE.sommeil[sSommeil]}` : '🌙 Sommeil — en attente');
+    const pasLabel = state.pas !== null
+      ? `👟 ${SCORE_TEXTE.pas[sPas]} (${state.pas.toLocaleString('fr-FR')} pas)`
+      : '👟 Pas — en attente';
 
-    // Global
-    const scores = [sRepas, sAlcool, sSommeil].filter(Boolean);
+    const CALS_TEXTE = {
+      vert:   'Calories dans la cible 🎉',
+      orange: 'Légèrement au-dessus de la cible',
+      rouge:  'Bien au-dessus de la cible',
+    };
+
+    setRow('bilan-repas',    sRepas,   sRepas   ? `🥗 ${SCORE_TEXTE.repas[sRepas]}` : '🥗 Repas — en attente');
+    setRow('bilan-alcool',   sAlcool,  sAlcool  ? `🍷 ${SCORE_TEXTE.alcool[sAlcool]}` : '🍷 Alcool — en attente');
+    setRow('bilan-sommeil',  sSommeil, sSommeil ? `🌙 ${SCORE_TEXTE.sommeil[sSommeil]}` : '🌙 Sommeil — en attente');
+    setRow('bilan-pas',      sPas,     pasLabel);
+    setRow('bilan-calories', sCals,    sCals ? `🔥 ${CALS_TEXTE[sCals]}` : '🔥 Calories — en attente');
+
+    // Global — 5 critères
+    const scores = [sRepas, sAlcool, sSommeil, sPas, sCals].filter(Boolean);
     let global = 'vide';
     let globalTexte = '—';
     if (scores.length > 0) {
-      if (scores.includes('rouge'))  { global = 'rouge';  globalTexte = '❌ Journée difficile — continue, demain c\'est mieux !'; }
-      else if (scores.includes('orange')) { global = 'orange'; globalTexte = '⚠️ Bonne journée — quelques points à améliorer'; }
-      else { global = 'vert'; globalTexte = '✅ Excellente journée — bravo !'; }
+      if (scores.includes('rouge'))        { global = 'rouge';  globalTexte = '❌ Journée difficile — continue, demain c\'est mieux !'; }
+      else if (scores.includes('orange'))  { global = 'orange'; globalTexte = '⚠️ Bonne journée — quelques points à améliorer'; }
+      else                                 { global = 'vert';   globalTexte = '✅ Excellente journée — bravo !'; }
     }
     const bg = document.getElementById('bilan-global');
     bg.className = `bilan-global ${global}`;
@@ -629,6 +851,7 @@
   ['matin', 'midi', 'soir'].forEach(buildRepasSection);
   renderAlcool();
   renderSommeil();
+  renderPas();
   updateBilan();
 })();
 </script>
