@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ea580c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <title>Portugais — Brésil</title>
+  <style>
+    /* ── Module Portugais — styles spécifiques ── */
+    .pt-section {
+      background: var(--surface-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--surface-card-shadow);
+      margin-bottom: var(--space-md);
+      overflow: hidden;
+    }
+    .pt-section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      padding: var(--space-sm) var(--space-md);
+      background: var(--surface-bg);
+      margin: 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .pt-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm) var(--space-md);
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .pt-item:last-child {
+      border-bottom: none;
+    }
+    .pt-texts {
+      flex: 1;
+      min-width: 0;
+    }
+    .pt-word {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+    .pt-fr {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      margin-top: 1px;
+    }
+    .pt-speak-btn {
+      flex-shrink: 0;
+      background: var(--accent-light);
+      border: none;
+      border-radius: var(--radius-full);
+      width: 36px;
+      height: 36px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .pt-speak-btn:active {
+      background: var(--accent);
+      transform: scale(0.92);
+    }
+    /* Category list screen */
+    #screen-categories .modules-grid {
+      padding: var(--space-md);
+    }
+    #screen-categories .module-card.active .card-sub {
+      font-size: 0.75rem;
+    }
+    /* Category detail screen */
+    #screen-categorie .page-main {
+      padding: var(--space-md);
+    }
+    /* Safe area bottom */
+    main { padding-bottom: max(var(--space-xl), env(safe-area-inset-bottom, 0px) + var(--space-md)); }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉCRAN 1 — Liste des 6 catégories
+  ════════════════════════════════════════════════ -->
+  <div id="screen-categories">
+    <header class="app-header">
+      <a href="../index.html" class="back-btn" aria-label="Retour à l'accueil">←</a>
+      <div>
+        <h1>Portugais 🇧🇷</h1>
+        <p class="header-sub">Préparer le voyage au Brésil</p>
+      </div>
+    </header>
+
+    <div class="modules-grid" id="categories-grid" role="list">
+      <!-- Généré par JS -->
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       ÉCRAN 2 — Détail d'une catégorie
+  ════════════════════════════════════════════════ -->
+  <div id="screen-categorie">
+    <header class="app-header">
+      <button class="back-btn" id="back-to-categories" aria-label="Retour aux catégories">←</button>
+      <div>
+        <h1 id="cat-title"></h1>
+      </div>
+    </header>
+
+    <main class="page-main" id="cat-content">
+      <!-- Généré par JS -->
+    </main>
+  </div>
+
+  <script>
+    // ── Données ────────────────────────────────────────────────────────────
+    let categories = [];
+
+    // ── Synthèse vocale ────────────────────────────────────────────────────
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      // Annuler la lecture en cours si l'utilisateur clique pendant qu'on lit
+      speechSynthesis.cancel();
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'pt-BR';
+
+      const trySpeak = () => {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          const voice =
+            voices.find(v => v.lang === 'pt-BR') ||
+            voices.find(v => v.lang.startsWith('pt')) ||
+            null;
+          if (voice) utter.voice = voice;
+        }
+        // Si aucune voix trouvée, le navigateur utilise la voix par défaut
+        speechSynthesis.speak(utter);
+      };
+
+      if (speechSynthesis.getVoices().length > 0) {
+        trySpeak();
+      } else {
+        speechSynthesis.addEventListener('voiceschanged', trySpeak, { once: true });
+      }
+    }
+
+    // ── Navigation ────────────────────────────────────────────────────────
+    function openCategory(index) {
+      const cat = categories[index];
+      document.getElementById('cat-title').textContent = cat.icone + ' ' + cat.nom;
+      document.getElementById('cat-content').innerHTML = renderCategory(cat);
+      document.getElementById('screen-categories').style.display = 'none';
+      document.getElementById('screen-categorie').style.display = 'block';
+      window.scrollTo(0, 0);
+    }
+
+    document.getElementById('back-to-categories').addEventListener('click', () => {
+      speechSynthesis.cancel && speechSynthesis.cancel();
+      document.getElementById('screen-categorie').style.display = 'none';
+      document.getElementById('screen-categories').style.display = 'block';
+      window.scrollTo(0, 0);
+    });
+
+    // ── Rendu ─────────────────────────────────────────────────────────────
+    function renderItem(item) {
+      const escaped = item.pt.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+      return `
+        <div class="pt-item">
+          <div class="pt-texts">
+            <div class="pt-word">${item.pt}</div>
+            <div class="pt-fr">${item.fr}</div>
+          </div>
+          <button class="pt-speak-btn" onclick="speak('${escaped}')" aria-label="Écouter : ${item.pt}">🔊</button>
+        </div>`;
+    }
+
+    function renderCategory(cat) {
+      const mots   = cat.mots.map(renderItem).join('');
+      const phrases = cat.phrases.map(renderItem).join('');
+      return `
+        <section class="pt-section" aria-label="Mots pratiques">
+          <h2 class="pt-section-title">Mots pratiques</h2>
+          ${mots}
+        </section>
+        <section class="pt-section" aria-label="Phrases pratiques">
+          <h2 class="pt-section-title">Phrases pratiques</h2>
+          ${phrases}
+        </section>`;
+    }
+
+    function renderCategoriesGrid() {
+      const grid = document.getElementById('categories-grid');
+      grid.innerHTML = categories.map((cat, i) => `
+        <div class="module-card active"
+             role="listitem"
+             tabindex="0"
+             aria-label="${cat.nom} — ${cat.mots.length} mots, ${cat.phrases.length} phrases"
+             onclick="openCategory(${i})"
+             onkeydown="if(event.key==='Enter'||event.key===' ')openCategory(${i})">
+          <span class="card-icon" aria-hidden="true">${cat.icone}</span>
+          <span class="card-label">${cat.nom}</span>
+          <span class="card-sub">${cat.mots.length} mots · ${cat.phrases.length} phrases</span>
+        </div>`).join('');
+    }
+
+    // ── Chargement ────────────────────────────────────────────────────────
+    fetch('../data/portugais.json')
+      .then(r => r.json())
+      .then(data => {
+        categories = data;
+        renderCategoriesGrid();
+      })
+      .catch(() => {
+        document.getElementById('categories-grid').innerHTML =
+          '<p style="padding:var(--space-md);color:var(--text-secondary)">Erreur de chargement des données.</p>';
+      });
+  </script>
+
+</body>
+</html>

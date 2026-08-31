@@ -1,0 +1,125 @@
+[
+  {
+    "id": "salutations",
+    "nom": "Salutations",
+    "icone": "👋",
+    "mots": [
+      { "pt": "Olá", "fr": "Salut" },
+      { "pt": "Sim", "fr": "Oui" },
+      { "pt": "Não", "fr": "Non" },
+      { "pt": "Por favor", "fr": "S'il vous plaît" },
+      { "pt": "Desculpe", "fr": "Excusez-moi / Pardon" }
+    ],
+    "phrases": [
+      { "pt": "Bom dia", "fr": "Bonjour (le matin)" },
+      { "pt": "Boa tarde", "fr": "Bonjour (l'après-midi)" },
+      { "pt": "Boa noite", "fr": "Bonsoir / Bonne nuit" },
+      { "pt": "Obrigado / Obrigada", "fr": "Merci (homme / femme)" },
+      { "pt": "Tudo bem?", "fr": "Ça va ?" },
+      { "pt": "Como você se chama?", "fr": "Comment tu t'appelles ?" },
+      { "pt": "Prazer em conhecê-lo", "fr": "Enchanté" },
+      { "pt": "Até logo", "fr": "À bientôt" }
+    ]
+  },
+  {
+    "id": "aeroport",
+    "nom": "Aéroport & transport",
+    "icone": "✈️",
+    "mots": [
+      { "pt": "Aeroporto", "fr": "Aéroport" },
+      { "pt": "Passaporte", "fr": "Passeport" },
+      { "pt": "Mala", "fr": "Valise" },
+      { "pt": "Táxi", "fr": "Taxi" },
+      { "pt": "Ônibus", "fr": "Bus" },
+      { "pt": "Saída", "fr": "Sortie" }
+    ],
+    "phrases": [
+      { "pt": "Onde fica o banheiro?", "fr": "Où sont les toilettes ?" },
+      { "pt": "Quanto custa até o centro?", "fr": "Combien ça coûte jusqu'au centre ?" },
+      { "pt": "Pode me levar a este endereço?", "fr": "Pouvez-vous m'emmener à cette adresse ?" },
+      { "pt": "A que horas parte o voo?", "fr": "À quelle heure part le vol ?" },
+      { "pt": "Preciso ir ao hotel", "fr": "J'ai besoin d'aller à l'hôtel" },
+      { "pt": "Onde pego o ônibus para...?", "fr": "Où je prends le bus pour... ?" }
+    ]
+  },
+  {
+    "id": "restaurant",
+    "nom": "Restaurant",
+    "icone": "🍽️",
+    "mots": [
+      { "pt": "Água", "fr": "Eau" },
+      { "pt": "Conta", "fr": "L'addition" },
+      { "pt": "Delicioso", "fr": "Délicieux" },
+      { "pt": "Cardápio", "fr": "Menu" },
+      { "pt": "Café", "fr": "Café" },
+      { "pt": "Cerveja", "fr": "Bière" }
+    ],
+    "phrases": [
+      { "pt": "A conta, por favor", "fr": "L'addition, s'il vous plaît" },
+      { "pt": "Vocês têm um cardápio em inglês?", "fr": "Avez-vous un menu en anglais ?" },
+      { "pt": "Eu gostaria de...", "fr": "Je voudrais..." },
+      { "pt": "Está muito bom!", "fr": "C'est très bon !" },
+      { "pt": "Sou alérgico a...", "fr": "Je suis allergique à..." },
+      { "pt": "Uma mesa para dois, por favor", "fr": "Une table pour deux, s'il vous plaît" }
+    ]
+  },
+  {
+    "id": "directions",
+    "nom": "Directions",
+    "icone": "🗺️",
+    "mots": [
+      { "pt": "Esquerda", "fr": "Gauche" },
+      { "pt": "Direita", "fr": "Droite" },
+      { "pt": "Perto", "fr": "Proche" },
+      { "pt": "Longe", "fr": "Loin" },
+      { "pt": "Aqui", "fr": "Ici" },
+      { "pt": "Praia", "fr": "Plage" }
+    ],
+    "phrases": [
+      { "pt": "Onde fica...?", "fr": "Où se trouve... ?" },
+      { "pt": "Como chego até...?", "fr": "Comment j'arrive à... ?" },
+      { "pt": "Está perto daqui?", "fr": "C'est proche d'ici ?" },
+      { "pt": "Pode me mostrar no mapa?", "fr": "Pouvez-vous me montrer sur la carte ?" },
+      { "pt": "Estou perdido", "fr": "Je suis perdu" }
+    ]
+  },
+  {
+    "id": "urgences",
+    "nom": "Urgences",
+    "icone": "🚨",
+    "mots": [
+      { "pt": "Ajuda", "fr": "Aide" },
+      { "pt": "Hospital", "fr": "Hôpital" },
+      { "pt": "Polícia", "fr": "Police" },
+      { "pt": "Médico", "fr": "Médecin" },
+      { "pt": "Farmácia", "fr": "Pharmacie" }
+    ],
+    "phrases": [
+      { "pt": "Preciso de ajuda", "fr": "J'ai besoin d'aide" },
+      { "pt": "Chame uma ambulância!", "fr": "Appelez une ambulance !" },
+      { "pt": "Estou doente", "fr": "Je suis malade" },
+      { "pt": "Onde fica o hospital mais próximo?", "fr": "Où est l'hôpital le plus proche ?" },
+      { "pt": "Perdi meu passaporte", "fr": "J'ai perdu mon passeport" },
+      { "pt": "Fui roubado", "fr": "J'ai été volé" }
+    ]
+  },
+  {
+    "id": "nombres",
+    "nom": "Nombres & argent",
+    "icone": "💰",
+    "mots": [
+      { "pt": "Um", "fr": "Un" },
+      { "pt": "Dois", "fr": "Deux" },
+      { "pt": "Três", "fr": "Trois" },
+      { "pt": "Dez", "fr": "Dix" },
+      { "pt": "Cem", "fr": "Cent" },
+      { "pt": "Real / Reais", "fr": "La monnaie brésilienne" }
+    ],
+    "phrases": [
+      { "pt": "Quanto custa isso?", "fr": "Combien ça coûte ?" },
+      { "pt": "Vocês aceitam cartão?", "fr": "Vous acceptez la carte ?" },
+      { "pt": "Onde tem um caixa eletrônico?", "fr": "Où y a-t-il un guichet automatique ?" },
+      { "pt": "Pode trocar dinheiro aqui?", "fr": "Pouvez-vous échanger de l'argent ici ?" }
+    ]
+  }
+]

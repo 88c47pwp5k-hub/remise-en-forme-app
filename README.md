@@ -13,13 +13,15 @@ remise-en-forme-app/
 ├── css/
 │   └── style.css             ← Feuille de style unique, variables CSS orange/blanc
 ├── data/
-│   └── exercice.json         ← Programme HIIT éditable sans toucher au code
+│   ├── exercice.json         ← Programme HIIT éditable sans toucher au code
+│   └── portugais.json        ← 6 catégories (mots + phrases) pour le module Portugais
 ├── icons/
 │   ├── icon-192-v2.png       ← Icône PWA 192×192 (orange, "50+")
 │   └── icon-512-v2.png       ← Icône PWA 512×512
 ├── modules/
 │   ├── exercice.html         ← Module HIIT avec timer plein écran
-│   └── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil)
+│   ├── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil)
+│   └── portugais.html        ← Module Portugais — vocabulaire Brésil (SpeechSynthesis)
 └── api/
     └── analyser-repas.js     ← Fonction serverless Vercel → Claude Vision
 ```
