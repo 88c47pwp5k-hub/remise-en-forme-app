@@ -14,12 +14,15 @@ remise-en-forme-app/
 │   └── style.css             ← Feuille de style unique, variables CSS orange/blanc
 ├── data/
 │   ├── exercice.json         ← Programme HIIT éditable sans toucher au code
+│   ├── etirement.json        ← Routine d'étirement (6 mouvements, éditable)
 │   └── portugais.json        ← 6 catégories (mots + phrases) pour le module Portugais
 ├── icons/
 │   ├── icon-192-v2.png       ← Icône PWA 192×192 (orange, "50+")
 │   └── icon-512-v2.png       ← Icône PWA 512×512
 ├── modules/
 │   ├── exercice.html         ← Module HIIT avec timer plein écran
+│   ├── etirement.html        ← Module Étirement — timer réutilisé, icônes Tabler
+│   ├── hydratation.html      ← Module Hydratation — compteur ml, objectif, onglet Historique (graphique CSS, sous-onglets Semaine/Mois/Année)
 │   ├── nutrition.html        ← Module Nutrition (photo + IA + alcool + sommeil)
 │   └── portugais.html        ← Module Portugais — vocabulaire Brésil (SpeechSynthesis)
 └── api/

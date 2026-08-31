@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ea580c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="../manifest.json" />
+  <link rel="apple-touch-icon" href="../icons/icon-192-v2.png" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <title>Hydratation — Remise en forme</title>
+  <style>
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    .page-main {
+      padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    /* ── Carte principale ── */
+    .hydra-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-xl) var(--space-md);
+      text-align: center;
+    }
+
+    .hydra-total {
+      font-size: 64px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -3px;
+      line-height: 1;
+    }
+
+    .hydra-unit {
+      font-size: var(--font-size-xl);
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -1px;
+    }
+
+    .hydra-bar-track {
+      height: 14px;
+      background: var(--accent-light);
+      border-radius: var(--radius-full);
+      margin: var(--space-md) 0 var(--space-sm);
+      overflow: hidden;
+    }
+
+    .hydra-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: var(--radius-full);
+      transition: width 0.4s ease;
+      min-width: 0;
+    }
+
+    .hydra-bar-fill.complet {
+      background: var(--success);
+    }
+
+    .hydra-objectif-label {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .hydra-pct {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* ── Boutons ── */
+    .hydra-btns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+    }
+
+    .btn-hydra-add {
+      padding: var(--space-md);
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-base);
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    .btn-hydra-add:hover { background: var(--accent-dark); }
+    .btn-hydra-add:active { transform: scale(0.97); }
+
+    .btn-hydra-remove {
+      grid-column: 1 / -1;
+      padding: var(--space-md);
+      background: var(--surface-card);
+      color: var(--text-secondary);
+      border: 2px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+
+    .btn-hydra-remove:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .btn-hydra-remove:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* ── Historique ── */
+    .histo-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+    }
+
+    .histo-title {
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-sm);
+    }
+
+    .histo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .histo-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .histo-date { color: var(--text-secondary); }
+
+    .histo-val {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .histo-val.ok { color: var(--success); }
+
+    .histo-empty {
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Rappel ── */
+    .rappel-card {
+      background: #eff6ff;
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-size: var(--font-size-sm);
+      color: #1d4ed8;
+    }
+
+    .rappel-icon { font-size: 22px; flex-shrink: 0; }
+
+    /* ── Ajuster objectif ── */
+    .objectif-section {
+      text-align: center;
+    }
+
+    .btn-objectif-toggle {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      padding: var(--space-xs) 0;
+    }
+
+    .objectif-form {
+      display: none;
+      margin-top: var(--space-sm);
+      gap: var(--space-sm);
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .objectif-form.open { display: flex; }
+
+    .objectif-input {
+      width: 110px;
+      padding: var(--space-sm) var(--space-md);
+      border: 2px solid var(--disabled-border);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-base);
+      font-weight: 700;
+      color: var(--text-primary);
+      text-align: center;
+      background: var(--surface-card);
+    }
+
+    .objectif-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .btn-objectif-save {
+      padding: var(--space-sm) var(--space-md);
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      text-align: center;
+      font-size: var(--font-size-xs);
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    /* ── Onglets principaux ── */
+    .hydra-tabs {
+      display: flex;
+      background: var(--surface-card);
+      border-bottom: 2px solid var(--surface-bg);
+      padding: 0 var(--space-md);
+    }
+    .hydra-tab {
+      flex: 1;
+      padding: var(--space-md) var(--space-sm);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: var(--font-size-base);
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-bottom: -2px;
+    }
+    .hydra-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Panel Historique ── */
+    .panel-histo {
+      flex-direction: column;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* ── Sous-onglets période ── */
+    .histo-subtabs {
+      display: flex;
+      background: var(--surface-bg);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
+    }
+    .histo-subtab {
+      flex: 1;
+      padding: var(--space-sm);
+      background: none;
+      border: none;
+      border-radius: calc(var(--radius-md) - 2px);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      text-align: center;
+    }
+    .histo-subtab.active {
+      background: var(--surface-card);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    /* ── Métriques clés ── */
+    .histo-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+    }
+    .histo-metric {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+      text-align: center;
+    }
+    .histo-metric-val {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -1px;
+    }
+    .histo-metric-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* ── Graphique en barres CSS ── */
+    .histo-chart-card {
+      background: var(--surface-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--surface-card-shadow);
+      padding: var(--space-md);
+    }
+    .histo-chart-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .chart-bar {
+      width: 100%;
+      border-radius: 4px 4px 0 0;
+      background: var(--accent);
+      min-height: 2px;
+    }
+    .chart-bar.pale { background: var(--accent-light); }
+    .chart-lbl {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-align: center;
+      white-space: nowrap;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chart-legend {
+      display: flex;
+      gap: var(--space-md);
+      justify-content: center;
+      margin-top: var(--space-sm);
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      align-items: center;
+    }
+    .legend-item { display: flex; align-items: center; gap: 4px; }
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .legend-dot.accent { background: var(--accent); }
+    .legend-dot.pale { background: var(--accent-light); border: 1px solid #e5e7eb; }
+    .histo-empty-state {
+      text-align: center;
+      font-size: var(--font-size-sm);
+      color: var(--text-muted);
+      font-style: italic;
+      padding: var(--space-xl) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="app-header" role="banner">
+    <a href="../index.html" class="back-btn" aria-label="Retour à l'accueil">←</a>
+    <div>
+      <h1>Hydratation</h1>
+      <p class="subtitle" id="page-subtitle">Aujourd'hui</p>
+    </div>
+  </header>
+
+  <!-- Onglets principaux -->
+  <nav class="hydra-tabs" role="tablist" aria-label="Navigation principale">
+    <button class="hydra-tab active" id="tab-aujourdhui" role="tab" aria-selected="true">Aujourd'hui</button>
+    <button class="hydra-tab" id="tab-historique" role="tab" aria-selected="false">Historique</button>
+  </nav>
+
+  <main class="page-main" id="panel-aujourdhui">
+
+    <!-- Bannière info -->
+    <div class="session-info" role="note">
+      <span class="info-icon" aria-hidden="true">💧</span>
+      <div class="info-text">
+        <strong>Suivi du jour</strong>
+        <span id="info-date"></span>
+      </div>
+    </div>
+
+    <!-- Carte principale : total + barre -->
+    <div class="hydra-card">
+      <div>
+        <span class="hydra-total" id="hydra-total">0</span>
+        <span class="hydra-unit"> ml</span>
+      </div>
+      <div class="hydra-bar-track" role="progressbar"
+           aria-valuemin="0" aria-valuemax="100" id="hydra-bar-track">
+        <div class="hydra-bar-fill" id="hydra-bar-fill"></div>
+      </div>
+      <p class="hydra-objectif-label">
+        <span class="hydra-pct" id="hydra-pct">0%</span>
+        &nbsp;de l'objectif
+        (<span id="hydra-objectif-val">2000</span> ml)
+      </p>
+    </div>
+
+    <!-- Boutons -->
+    <div class="hydra-btns" role="group" aria-label="Ajouter ou retirer">
+      <button class="btn-hydra-add" id="btn-plus250" type="button">+ 250 ml</button>
+      <button class="btn-hydra-add" id="btn-plus500" type="button">+ 500 ml</button>
+      <button class="btn-hydra-remove" id="btn-moins250" type="button" disabled>
+        − 250 ml &nbsp;(annuler la dernière)
+      </button>
+    </div>
+
+    <!-- Historique -->
+    <div class="histo-card">
+      <p class="histo-title">Historique récent</p>
+      <div class="histo-list" id="histo-list">
+        <p class="histo-empty">Aucun historique pour l'instant.</p>
+      </div>
+    </div>
+
+    <!-- Rappel -->
+    <div class="rappel-card" role="note">
+      <span class="rappel-icon" aria-hidden="true">⏰</span>
+      <span>Rappel toutes les 2h entre 8h et 20h — pensez à boire régulièrement tout au long de la journée.</span>
+    </div>
+
+    <!-- Ajuster objectif -->
+    <div class="objectif-section">
+      <button class="btn-objectif-toggle" id="btn-objectif-toggle" type="button">
+        Ajuster mon objectif ↓
+      </button>
+      <div class="objectif-form" id="objectif-form" role="form" aria-label="Modifier l'objectif">
+        <input class="objectif-input" id="objectif-input"
+               type="number" min="500" max="5000" step="50"
+               aria-label="Objectif en ml" />
+        <button class="btn-objectif-save" id="btn-objectif-save" type="button">Sauvegarder</button>
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <p class="disclaimer">
+      Repère basé sur Santé Canada (env. 2 L de liquides/jour pour une femme,<br>
+      2,5–3 L pour un homme, selon l'activité) — ajustable dans les réglages.
+    </p>
+
+  </main>
+
+  <!-- ============================================================
+       Panel Historique
+       ============================================================ -->
+  <div id="panel-historique" class="panel-histo" style="display:none"
+       role="tabpanel" aria-labelledby="tab-historique">
+
+    <!-- Sous-onglets période -->
+    <div class="histo-subtabs" role="tablist" aria-label="Période">
+      <button class="histo-subtab active" data-period="semaine" role="tab">Semaine</button>
+      <button class="histo-subtab" data-period="mois" role="tab">Mois</button>
+      <button class="histo-subtab" data-period="annee" role="tab">Année</button>
+    </div>
+
+    <!-- Métriques clés -->
+    <div class="histo-metrics">
+      <div class="histo-metric">
+        <span class="histo-metric-val" id="histo-avg">—</span>
+        <span class="histo-metric-label">ml / jour en moyenne</span>
+      </div>
+      <div class="histo-metric">
+        <span class="histo-metric-val" id="histo-goal-days">—</span>
+        <span class="histo-metric-label">Objectif atteint</span>
+      </div>
+    </div>
+
+    <!-- Graphique -->
+    <div class="histo-chart-card">
+      <div id="histo-chart">
+        <p class="histo-empty-state">Pas encore assez de données pour cette période.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    const LS_OBJECTIF = 'hydratation-objectif';
+
+    function todayKey() {
+      const d = new Date();
+      return `hydratation-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatDate(key) {
+      // key = "hydratation-YYYY-MM-DD"
+      const parts = key.replace('hydratation-', '').split('-');
+      const d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+      return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
+    // ── État ──
+    let total    = parseInt(localStorage.getItem(todayKey()) || '0', 10);
+    let objectif = parseInt(localStorage.getItem(LS_OBJECTIF) || '2000', 10);
+
+    // ── DOM ──
+    const elTotal      = document.getElementById('hydra-total');
+    const elBarFill    = document.getElementById('hydra-bar-fill');
+    const elBarTrack   = document.getElementById('hydra-bar-track');
+    const elPct        = document.getElementById('hydra-pct');
+    const elObjVal     = document.getElementById('hydra-objectif-val');
+    const elBtnMoins   = document.getElementById('btn-moins250');
+    const elHistoList  = document.getElementById('histo-list');
+    const elInfoDate   = document.getElementById('info-date');
+    const elSubtitle   = document.getElementById('page-subtitle');
+
+    // ── Render ──
+    function render() {
+      const pct = Math.min(100, objectif > 0 ? Math.round((total / objectif) * 100) : 0);
+
+      elTotal.textContent = total;
+      elBarFill.style.width = pct + '%';
+      elBarTrack.setAttribute('aria-valuenow', pct);
+      elBarFill.classList.toggle('complet', pct >= 100);
+      elPct.textContent = pct + '%';
+      elObjVal.textContent = objectif;
+      elBtnMoins.disabled = total <= 0;
+
+      // Sauvegarder
+      localStorage.setItem(todayKey(), total);
+    }
+
+    function renderDate() {
+      const d = new Date();
+      const label = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      elInfoDate.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      elSubtitle.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+    }
+
+    function renderHistorique() {
+      const today = todayKey();
+      const rows = [];
+
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = `hydratation-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const val = localStorage.getItem(key);
+        if (val !== null) {
+          rows.push({ key, val: parseInt(val, 10) });
+        }
+      }
+
+      if (rows.length === 0) {
+        elHistoList.innerHTML = '<p class="histo-empty">Aucun historique pour l\'instant.</p>';
+        return;
+      }
+
+      elHistoList.innerHTML = rows.map(({ key, val }) => {
+        const ok = val >= objectif;
+        return `<div class="histo-row">
+          <span class="histo-date">${formatDate(key)}</span>
+          <span class="histo-val ${ok ? 'ok' : ''}">${val} ml${ok ? ' ✓' : ''}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Actions ──
+    document.getElementById('btn-plus250').addEventListener('click', () => {
+      total += 250;
+      render();
+    });
+
+    document.getElementById('btn-plus500').addEventListener('click', () => {
+      total += 500;
+      render();
+    });
+
+    elBtnMoins.addEventListener('click', () => {
+      total = Math.max(0, total - 250);
+      render();
+    });
+
+    // ── Ajuster objectif ──
+    const btnToggle   = document.getElementById('btn-objectif-toggle');
+    const formObj     = document.getElementById('objectif-form');
+    const inputObj    = document.getElementById('objectif-input');
+    const btnSaveObj  = document.getElementById('btn-objectif-save');
+
+    btnToggle.addEventListener('click', () => {
+      const open = formObj.classList.toggle('open');
+      btnToggle.textContent = open ? 'Ajuster mon objectif ↑' : 'Ajuster mon objectif ↓';
+      if (open) {
+        inputObj.value = objectif;
+        inputObj.focus();
+      }
+    });
+
+    btnSaveObj.addEventListener('click', () => {
+      const v = parseInt(inputObj.value, 10);
+      if (!v || v < 500 || v > 5000) {
+        inputObj.focus();
+        return;
+      }
+      objectif = v;
+      localStorage.setItem(LS_OBJECTIF, objectif);
+      formObj.classList.remove('open');
+      btnToggle.textContent = 'Ajuster mon objectif ↓';
+      render();
+      renderHistorique();
+    });
+
+    inputObj.addEventListener('keydown', e => {
+      if (e.key === 'Enter') btnSaveObj.click();
+    });
+
+    // ── Onglet Historique ────────────────────────────────────────────
+
+    let currentPeriod = 'semaine';
+
+    function keyFor(d) {
+      return `hydratation-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getDayPoints(nDays) {
+      const pts = [];
+      for (let i = nDays - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const raw = localStorage.getItem(keyFor(d));
+        const val = raw !== null ? parseInt(raw, 10) : 0;
+        const lbl = d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '');
+        pts.push({ label: lbl, val, hasData: raw !== null });
+      }
+      return pts;
+    }
+
+    function groupByWeeks(pts) {
+      const weeks = [];
+      for (let i = 0; i < pts.length; i += 7) {
+        const chunk = pts.slice(i, i + 7);
+        const dwd = chunk.filter(p => p.hasData).length;
+        const total = chunk.reduce((s, p) => s + p.val, 0);
+        weeks.push({
+          label: `S${weeks.length + 1}`,
+          total,
+          avgDaily: dwd > 0 ? Math.round(total / dwd) : 0,
+          hasData: dwd > 0,
+          daysWithData: dwd
+        });
+      }
+      return weeks;
+    }
+
+    function getMonthPoints() {
+      const today = new Date();
+      const months = [];
+      for (let m = 11; m >= 0; m--) {
+        const base = new Date(today.getFullYear(), today.getMonth() - m, 1);
+        const yr = base.getFullYear(), mo = base.getMonth();
+        const daysInMonth = new Date(yr, mo + 1, 0).getDate();
+        let total = 0, dwd = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+          const d = new Date(yr, mo, day);
+          if (d > today) break;
+          const raw = localStorage.getItem(`hydratation-${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`);
+          if (raw !== null) { total += parseInt(raw, 10); dwd++; }
+        }
+        months.push({
+          label: base.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''),
+          total,
+          avgDaily: dwd > 0 ? Math.round(total / dwd) : 0,
+          hasData: dwd > 0,
+          daysWithData: dwd
+        });
+      }
+      return months;
+    }
+
+    function renderChart(bars) {
+      const chartEl = document.getElementById('histo-chart');
+      const maxVal = Math.max(...bars.map(b => b.val), 1);
+      const BAR_MAX = 90; // px
+      chartEl.innerHTML = `
+        <div class="histo-chart-bars">
+          ${bars.map(b => {
+            const h = Math.max(2, Math.round((b.val / maxVal) * BAR_MAX));
+            return `<div class="chart-col">
+              <div class="chart-bar ${b.reached ? '' : 'pale'}" style="height:${h}px"></div>
+              <span class="chart-lbl">${b.label}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot accent"></span>Objectif atteint</span>
+          <span class="legend-item"><span class="legend-dot pale"></span>En dessous</span>
+        </div>`;
+    }
+
+    function setEmptyState() {
+      document.getElementById('histo-avg').textContent = '—';
+      document.getElementById('histo-goal-days').textContent = '—';
+      document.getElementById('histo-chart').innerHTML =
+        '<p class="histo-empty-state">Pas encore assez de données pour cette période.</p>';
+    }
+
+    function renderHistoriqueTab(period) {
+      const avgEl  = document.getElementById('histo-avg');
+      const goalEl = document.getElementById('histo-goal-days');
+
+      if (period === 'semaine') {
+        const pts = getDayPoints(7);
+        const wd = pts.filter(p => p.hasData);
+        if (wd.length < 2) { setEmptyState(); return; }
+        const avg = Math.round(wd.reduce((s, p) => s + p.val, 0) / wd.length);
+        avgEl.textContent = avg.toLocaleString('fr-FR') + ' ml';
+        goalEl.textContent = `${wd.filter(p => p.val >= objectif).length} / ${wd.length} j`;
+        renderChart(pts.map(p => ({ label: p.label, val: p.val, reached: p.hasData && p.val >= objectif })));
+
+      } else if (period === 'mois') {
+        const weeks = groupByWeeks(getDayPoints(28));
+        const wd = weeks.filter(w => w.hasData);
+        if (wd.length < 2) { setEmptyState(); return; }
+        const tDays = wd.reduce((s, w) => s + w.daysWithData, 0);
+        const tMl   = wd.reduce((s, w) => s + w.total, 0);
+        avgEl.textContent = (tDays > 0 ? Math.round(tMl / tDays) : 0).toLocaleString('fr-FR') + ' ml';
+        goalEl.textContent = `${wd.filter(w => w.avgDaily >= objectif).length} / ${wd.length} sem.`;
+        renderChart(weeks.map(w => ({ label: w.label, val: w.avgDaily, reached: w.hasData && w.avgDaily >= objectif })));
+
+      } else {
+        const months = getMonthPoints();
+        const wd = months.filter(m => m.hasData);
+        if (wd.length < 2) { setEmptyState(); return; }
+        const tDays = wd.reduce((s, m) => s + m.daysWithData, 0);
+        const tMl   = wd.reduce((s, m) => s + m.total, 0);
+        avgEl.textContent = (tDays > 0 ? Math.round(tMl / tDays) : 0).toLocaleString('fr-FR') + ' ml';
+        goalEl.textContent = `${wd.filter(m => m.avgDaily >= objectif).length} / ${wd.length} mois`;
+        renderChart(months.map(m => ({ label: m.label, val: m.avgDaily, reached: m.hasData && m.avgDaily >= objectif })));
+      }
+    }
+
+    // Switching onglets principaux
+    const btnTabAuj = document.getElementById('tab-aujourdhui');
+    const btnTabHis = document.getElementById('tab-historique');
+    const panelAuj  = document.getElementById('panel-aujourdhui');
+    const panelHis  = document.getElementById('panel-historique');
+
+    btnTabAuj.addEventListener('click', () => {
+      btnTabAuj.classList.add('active');    btnTabHis.classList.remove('active');
+      panelAuj.style.display = '';          panelHis.style.display = 'none';
+      btnTabAuj.setAttribute('aria-selected', 'true');
+      btnTabHis.setAttribute('aria-selected', 'false');
+    });
+
+    btnTabHis.addEventListener('click', () => {
+      btnTabHis.classList.add('active');    btnTabAuj.classList.remove('active');
+      panelHis.style.display = 'flex';      panelAuj.style.display = 'none';
+      btnTabHis.setAttribute('aria-selected', 'true');
+      btnTabAuj.setAttribute('aria-selected', 'false');
+      renderHistoriqueTab(currentPeriod);
+    });
+
+    // Sous-onglets période
+    document.querySelectorAll('.histo-subtab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.histo-subtab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPeriod = btn.dataset.period;
+        renderHistoriqueTab(currentPeriod);
+      });
+    });
+
+    // ── Init ──
+    renderDate();
+    render();
+    renderHistorique();
+  })();
+  </script>
+
+</body>
+</html>
