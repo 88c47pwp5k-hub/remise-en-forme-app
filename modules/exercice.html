@@ -8,10 +8,19 @@
   <link rel="manifest" href="../manifest.json" />
   <link rel="apple-touch-icon" href="../icons/icon-192-v2.png" />
   <link rel="stylesheet" href="../css/style.css" />
+  <!-- Tabler Icons (webfont) — licence MIT, source : tabler.io/icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
   <title>Exercice — Remise en forme</title>
   <style>
     body { padding-bottom: env(safe-area-inset-bottom); }
     .page-main { padding-bottom: calc(var(--space-2xl) + env(safe-area-inset-bottom, 0px)); }
+
+    /* Icône Tabler dans le badge circulaire */
+    .exercice-item .badge .ti {
+      color: #fff;
+      font-size: 1rem;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
@@ -170,11 +179,21 @@
         item.id = `ex-item-${i}`;
         item.setAttribute('role', 'listitem');
 
-        // Badge
-        let badgeContent = '';
-        if (ex.type === 'echauffement') badgeContent = '🔥';
-        else if (ex.type === 'retour_calme') badgeContent = '🧊';
-        else badgeContent = i; // numéro réel
+        // Badge — icône Tabler par id d'exercice
+        const ICONS = {
+          'echauffement':      'ti-flame',
+          'wall-sit':          'ti-armchair',
+          'step-up':           'ti-stairs-up',
+          'push-up-incline':   'ti-arrow-bar-to-up',
+          'dips':              'ti-arrow-bar-down',
+          'mountain-climbers': 'ti-run',
+          'planche':           'ti-minus',
+          'retour-calme':      'ti-wind',
+        };
+        const iconClass = ICONS[ex.id];
+        const badgeContent = iconClass
+          ? `<i class="ti ${iconClass}" aria-hidden="true"></i>`
+          : i;
 
         // Détail texte
         let detail = '';
