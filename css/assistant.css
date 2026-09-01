@@ -1,0 +1,193 @@
+/* ── Assistant global — bouton flottant + overlay chat ──────────────── */
+
+/* Bouton flottant */
+.assist-fab {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right: 20px;
+  z-index: 1000;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 16px rgba(234, 88, 12, 0.45);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.assist-fab:hover  { transform: scale(1.08); box-shadow: 0 6px 20px rgba(234,88,12,0.55); }
+.assist-fab:active { transform: scale(0.95); }
+.assist-fab .ti    { font-size: 22px; line-height: 1; }
+
+/* Overlay */
+.assist-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+.assist-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Panneau chat */
+.assist-panel {
+  width: 100%;
+  max-height: 82vh;
+  background: var(--surface-card, #fff);
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.assist-overlay.open .assist-panel {
+  transform: translateY(0);
+}
+
+/* En-tête */
+.assist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+.assist-title {
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary, #111827);
+}
+.assist-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: var(--text-secondary, #6b7280);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.assist-close:hover { background: #e5e7eb; }
+
+/* Zone messages */
+.assist-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Bulle message */
+.assist-msg {
+  max-width: 82%;
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.assist-msg.user {
+  align-self: flex-end;
+  background: var(--accent, #ea580c);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.assist-msg.assistant {
+  align-self: flex-start;
+  background: #f3f4f6;
+  color: var(--text-primary, #111827);
+  border-bottom-left-radius: 4px;
+}
+.assist-msg.loading {
+  align-self: flex-start;
+  background: #f3f4f6;
+  color: var(--text-secondary, #6b7280);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Spinner dans loading */
+.assist-spinner {
+  width: 14px; height: 14px;
+  border: 2px solid #d1d5db;
+  border-top-color: var(--accent, #ea580c);
+  border-radius: 50%;
+  animation: assist-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes assist-spin { to { transform: rotate(360deg); } }
+
+/* Bannière vide */
+.assist-empty {
+  text-align: center;
+  color: var(--text-secondary, #6b7280);
+  font-size: 13px;
+  padding: 20px 0 10px;
+  line-height: 1.6;
+}
+
+/* Zone de saisie */
+.assist-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  border-top: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+.assist-input {
+  flex: 1;
+  padding: 10px 13px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 14px;
+  color: var(--text-primary, #111827);
+  background: #f9fafb;
+  outline: none;
+  resize: none;
+  max-height: 100px;
+  overflow-y: auto;
+  line-height: 1.4;
+  transition: border-color 0.15s;
+}
+.assist-input:focus { border-color: var(--accent, #ea580c); background: #fff; }
+.assist-send {
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  align-self: flex-end;
+  border-radius: 50%;
+  background: var(--accent, #ea580c);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  transition: background 0.15s, transform 0.12s;
+}
+.assist-send:hover  { background: var(--accent-dark, #c2410c); }
+.assist-send:active { transform: scale(0.92); }
+.assist-send:disabled { opacity: 0.4; cursor: default; transform: none; }
+.assist-send .ti { font-size: 17px; line-height: 1; }
