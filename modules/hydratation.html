@@ -884,9 +884,15 @@
     btn.addEventListener('click', async () => {
       btn.disabled    = true;
       btn.textContent = 'Activation…';
+      let etape = 'init';
 
       try {
+        // 0. Enregistrer le SW si ce n'est pas déjà fait (fallback si index.html non visité)
+        etape = 'enregistrement SW';
+        await navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+
         // 1. Permission
+        etape = 'permission notification';
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
           btn.textContent = 'Permission refusée';
@@ -894,30 +900,44 @@
         }
 
         // 2. Récupérer la clé VAPID publique
+        etape = 'clé VAPID (/api/vapid-public-key)';
         const kvResp = await fetch('/api/vapid-public-key');
-        if (!kvResp.ok) throw new Error('Clé VAPID indisponible');
+        if (!kvResp.ok) throw new Error(`HTTP ${kvResp.status}`);
         const { publicKey } = await kvResp.json();
+        if (!publicKey) throw new Error('publicKey absente de la réponse');
 
-        // 3. Inscrire le service worker et s'abonner
-        const reg = await navigator.serviceWorker.ready;
+        // 3. Attendre le SW actif — timeout 12s pour éviter blocage infini sur iOS
+        etape = 'navigator.serviceWorker.ready';
+        const reg = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout 12s — SW non actif')), 12000)),
+        ]);
+
+        // 4. S'abonner au push
+        etape = 'pushManager.subscribe()';
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(publicKey),
         });
 
-        // 4. Envoyer l'abonnement au serveur
+        // 5. Envoyer l'abonnement au serveur
+        etape = '/api/save-subscription';
         const saveResp = await fetch('/api/save-subscription', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(subscription.toJSON()),
         });
-        if (!saveResp.ok) throw new Error('Erreur sauvegarde abonnement');
+        if (!saveResp.ok) throw new Error(`HTTP ${saveResp.status}`);
 
-        // 5. Marquer comme actif
+        // 6. Marquer comme actif
         localStorage.setItem(LS_RAPPEL, '1');
         setActif();
       } catch (err) {
-        console.error('[rappel push]', err);
+        console.error('[rappel push] étape:', etape, err);
+        // Afficher l'erreur réelle à l'écran pour diagnostiquer
+        const detail = `[${etape}] ${err.name}: ${err.message}`;
+        alert('Erreur activation rappels :\n' + detail);
+        texte.textContent = detail;
         btn.textContent = 'Erreur — réessayer';
         btn.disabled    = false;
       }
