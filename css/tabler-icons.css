@@ -1,0 +1,35 @@
+/* Tabler Icons — auto-hébergé pour PWA iOS (v3.46.0) */
+@font-face {
+  font-family: 'tabler-icons';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../fonts/tabler-icons.woff2') format('woff2');
+}
+
+.ti {
+  font-family: 'tabler-icons' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ti-armchair::before        { content: "\ef9e"; }
+.ti-arrow-bar-down::before  { content: "\ea0d"; }
+.ti-arrow-bar-to-up::before { content: "\ec8b"; }
+.ti-arrows-up::before       { content: "\edb7"; }
+.ti-flame::before           { content: "\ec2c"; }
+.ti-heart::before           { content: "\eabe"; }
+.ti-lungs::before           { content: "\ef62"; }
+.ti-minus::before           { content: "\eaf2"; }
+.ti-rotate::before          { content: "\eb16"; }
+.ti-rotate-clockwise::before { content: "\eb15"; }
+.ti-run::before             { content: "\ec82"; }
+.ti-send::before            { content: "\eb1e"; }
+.ti-sparkles::before        { content: "\f6d7"; }
+.ti-stairs-up::before       { content: "\eca5"; }
+.ti-wind::before            { content: "\ec34"; }
