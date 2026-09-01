@@ -137,6 +137,61 @@ Vercel redéploie automatiquement.
 
 ---
 
+---
+
+## Rappels push hydratation — Configuration initiale
+
+Le module Hydratation peut envoyer des notifications push toutes les 2h (8h–20h, fuseau Eastern). Voici les étapes manuelles à faire **une seule fois** avant de déployer.
+
+### Étape 1 — Créer une base @vercel/kv
+
+1. Va sur [vercel.com](https://vercel.com) → ton projet `remise-en-forme-app`
+2. Onglet **Storage** → **Create Database** → choisis **KV (Redis)**
+3. Nomme-la `remise-en-forme-kv` (ou autre)
+4. Clique **Create** puis **Connect to Project**
+5. Vercel injecte automatiquement `KV_REST_API_URL` et `KV_REST_API_TOKEN` dans les variables d'environnement
+
+### Étape 2 — Ajouter les variables d'environnement dans Vercel
+
+Dans **Settings → Environment Variables** de ton projet Vercel, ajoute ces 3 variables (Environments : Production + Preview) :
+
+| Nom | Valeur |
+|-----|--------|
+| `VAPID_PUBLIC_KEY` | La clé publique générée par `node generate-vapid.js` |
+| `VAPID_PRIVATE_KEY` | La clé privée générée par `node generate-vapid.js` |
+| `REMINDER_SECRET` | Un mot de passe de ton choix (ex: une chaîne aléatoire) |
+
+> Les clés VAPID sont déjà générées et affichées dans ton terminal lors de l'exécution du setup.
+
+Pour régénérer les clés : `node -e "const wp=require('web-push'); const k=wp.generateVAPIDKeys(); console.log(k);"`
+
+### Étape 3 — Configurer cron-job.org pour les rappels automatiques
+
+1. Crée un compte gratuit sur [cron-job.org](https://cron-job.org)
+2. Crée un nouveau cron job :
+   - **URL** : `https://remise-en-forme-app.vercel.app/api/send-reminder?secret=VOTRE_REMINDER_SECRET`
+   - **Schedule** : `0 */2 * * *` (toutes les 2 heures)
+   - **Method** : GET
+3. Active le job
+
+> L'endpoint vérifie l'heure en fuseau Eastern (America/Toronto) et n'envoie rien si hors plage 8h–20h.
+
+### Étape 4 — Déployer
+
+Une fois les étapes 1–3 complétées :
+```bash
+git add . && git commit -m "feat: rappels push hydratation" && git push
+```
+
+### Pour tirer les variables KV en local (développement)
+
+```bash
+vercel env pull .env.local
+vercel dev   # → http://localhost:3000 avec toutes les fonctions + KV
+```
+
+---
+
 ## Installation sur mobile
 
 ### iPhone (Safari)

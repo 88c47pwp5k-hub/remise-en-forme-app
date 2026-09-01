@@ -186,6 +186,28 @@
 
     .rappel-icon { font-size: 22px; flex-shrink: 0; }
 
+    .rappel-card.active {
+      background: #f0fdf4;
+      color: #166534;
+    }
+
+    .btn-rappel {
+      margin-left: auto;
+      padding: 6px 14px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: #1d4ed8;
+      color: white;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-rappel:disabled { opacity: 0.6; cursor: default; }
+    .rappel-card.active .btn-rappel { background: #166534; }
+
     /* ── Ajuster objectif ── */
     .objectif-section {
       text-align: center;
@@ -460,10 +482,11 @@
       </div>
     </div>
 
-    <!-- Rappel -->
-    <div class="rappel-card" role="note">
+    <!-- Rappel push -->
+    <div class="rappel-card" id="rappel-card" role="note">
       <span class="rappel-icon" aria-hidden="true">⏰</span>
-      <span>Rappel toutes les 2h entre 8h et 20h — pensez à boire régulièrement tout au long de la journée.</span>
+      <span id="rappel-texte">Rappel toutes les 2h entre 8h et 20h</span>
+      <button class="btn-rappel" id="btn-rappel" type="button">Activer les rappels</button>
     </div>
 
     <!-- Ajuster objectif -->
@@ -830,6 +853,82 @@
     renderDate();
     render();
     renderHistorique();
+  })();
+  </script>
+
+  <script>
+  // ── Rappel push ──────────────────────────────────────────────────────────
+  (function () {
+    const LS_RAPPEL = 'rappel-push-actif';
+    const card      = document.getElementById('rappel-card');
+    const texte     = document.getElementById('rappel-texte');
+    const btn       = document.getElementById('btn-rappel');
+
+    function setActif() {
+      card.classList.add('active');
+      texte.textContent = 'Rappels activés ✅';
+      btn.textContent   = 'Rappels activés ✅';
+      btn.disabled      = true;
+    }
+
+    // Restaurer l'état persisté
+    if (localStorage.getItem(LS_RAPPEL) === '1') setActif();
+
+    // Vérifier le support
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      btn.textContent = 'Non supporté';
+      btn.disabled    = true;
+      return;
+    }
+
+    btn.addEventListener('click', async () => {
+      btn.disabled    = true;
+      btn.textContent = 'Activation…';
+
+      try {
+        // 1. Permission
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          btn.textContent = 'Permission refusée';
+          return;
+        }
+
+        // 2. Récupérer la clé VAPID publique
+        const kvResp = await fetch('/api/vapid-public-key');
+        if (!kvResp.ok) throw new Error('Clé VAPID indisponible');
+        const { publicKey } = await kvResp.json();
+
+        // 3. Inscrire le service worker et s'abonner
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+
+        // 4. Envoyer l'abonnement au serveur
+        const saveResp = await fetch('/api/save-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subscription.toJSON()),
+        });
+        if (!saveResp.ok) throw new Error('Erreur sauvegarde abonnement');
+
+        // 5. Marquer comme actif
+        localStorage.setItem(LS_RAPPEL, '1');
+        setActif();
+      } catch (err) {
+        console.error('[rappel push]', err);
+        btn.textContent = 'Erreur — réessayer';
+        btn.disabled    = false;
+      }
+    });
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const raw     = atob(base64);
+      return Uint8Array.from(raw, c => c.charCodeAt(0));
+    }
   })();
   </script>
   <script src="../js/assistant.js" defer></script>

@@ -1,7 +1,7 @@
 // Service Worker — Remise en forme PWA
 // Stratégie : Cache First pour les assets statiques, Network First pour les données JSON
 
-const CACHE_NAME = 'remise-en-forme-v7';
+const CACHE_NAME = 'remise-en-forme-v8';
 
 // Dériver le chemin de base depuis la portée du SW (fonctionne en local ET sur GitHub Pages)
 // Ex: '/' en local, '/remise-en-forme-app/' sur GitHub Pages
@@ -107,3 +107,35 @@ async function networkFirst(request) {
     return cached || new Response('{}', { headers: { 'Content-Type': 'application/json' } });
   }
 }
+
+// ---- Push : affichage de la notification ----
+self.addEventListener('push', event => {
+  let data = { title: '💧 Hydratation', body: 'C\'est le temps de boire de l\'eau!', url: '/modules/hydratation.html' };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch {}
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icons/icon-192-v2.png',
+      badge: '/icons/icon-192-v2.png',
+      tag: 'hydratation-rappel',
+      renotify: true,
+      actions: [{ action: 'open', title: 'Voir' }],
+      data: { url: data.url },
+    })
+  );
+});
+
+// ---- Notificationclick : ouvrir le module Hydratation ----
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/modules/hydratation.html';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+      for (const client of list) {
+        if (client.url.includes('hydratation') && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
