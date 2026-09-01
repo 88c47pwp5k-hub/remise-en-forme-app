@@ -5,6 +5,7 @@ test-*.mjs
 test-*.js
 test-screenshots/
 screenshot-*.png
+v-*.png
 .vercel/
 .vercel
 .env*
