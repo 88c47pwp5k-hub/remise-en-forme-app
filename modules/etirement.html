@@ -32,6 +32,27 @@
       margin-top: var(--space-sm);
       font-style: italic;
     }
+
+    /* ── Modal détail illustration ── */
+    .exercice-item { cursor: pointer; }
+    #detail-modal { position:fixed; inset:0; z-index:500; display:flex; align-items:flex-end; justify-content:center; }
+    #detail-modal[hidden] { display:none; }
+    .detail-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.45); }
+    .detail-card {
+      position:relative; background:#fff; border-radius:20px 20px 0 0;
+      padding:var(--space-lg) var(--space-md) calc(var(--space-lg) + env(safe-area-inset-bottom,0px));
+      width:100%; max-width:500px; max-height:82vh; overflow-y:auto; text-align:center;
+    }
+    .detail-close {
+      position:absolute; top:10px; right:10px; background:#f3f4f6; border:none;
+      border-radius:50%; width:32px; height:32px; font-size:.9rem; cursor:pointer; line-height:1;
+    }
+    .detail-img { width:200px; height:200px; object-fit:contain; margin:0 auto var(--space-sm); display:block; background:#1e293b; border-radius:16px; padding:12px; }
+    .detail-nom { font-size:1.05rem; font-weight:700; margin:0 0 var(--space-xs); color:var(--text-primary); }
+    .detail-desc { font-size:.875rem; color:var(--text-secondary); margin:0 0 var(--space-xs); line-height:1.5; }
+    .detail-conseil { font-size:.825rem; color:var(--accent); font-style:italic; margin:0 0 var(--space-sm); }
+    .detail-attr { font-size:.68rem; color:var(--text-muted); margin:0; }
+    .detail-attr a { color:inherit; }
   </style>
 </head>
 <body>
@@ -92,6 +113,19 @@
       <!-- Contenu injecté dynamiquement -->
     </div>
 
+  </div>
+
+  <!-- Modal détail illustration -->
+  <div id="detail-modal" hidden role="dialog" aria-modal="true" aria-label="Détail du mouvement">
+    <div class="detail-backdrop" id="detail-backdrop"></div>
+    <div class="detail-card">
+      <button class="detail-close" id="detail-close" aria-label="Fermer">✕</button>
+      <img id="detail-img" alt="" class="detail-img" />
+      <h3 id="detail-nom" class="detail-nom"></h3>
+      <p id="detail-desc" class="detail-desc"></p>
+      <p id="detail-conseil" class="detail-conseil"></p>
+      <p class="detail-attr">Illustration : <a href="https://bryllim.com" target="_blank" rel="noopener">Bryl Lim</a> — <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a></p>
+    </div>
   </div>
 
   <!-- ============================================================
@@ -165,6 +199,41 @@
       }
     }
 
+    // --- Illustrations (workout-guide CC BY-SA 4.0) ---
+    const ILLUSTRATIONS = {
+      'bras-vers-ciel':     '../images/exercises/worlds-greatest-stretch.png',
+      'torsion-tronc':      '../images/exercises/torso-twist-stretch.png',
+      'flexion-avant':      '../images/exercises/seated-forward-fold-stretch.png',
+      'rotation-hanches':   '../images/exercises/butterfly-stretch.png',
+      'respiration-finale': '../images/exercises/childs-pose.png',
+    };
+
+    // --- Modal détail ---
+    const detailModal   = document.getElementById('detail-modal');
+    const detailImg     = document.getElementById('detail-img');
+    const detailNom     = document.getElementById('detail-nom');
+    const detailDesc    = document.getElementById('detail-desc');
+    const detailConseil = document.getElementById('detail-conseil');
+
+    function ouvrirDetail(ex) {
+      const src = ILLUSTRATIONS[ex.id];
+      if (!src) return;
+      detailImg.src     = src;
+      detailImg.alt     = ex.nom;
+      detailNom.textContent     = ex.nom;
+      detailDesc.textContent    = ex.description || '';
+      detailConseil.textContent = ex.conseil ? '💡 ' + ex.conseil : '';
+      detailModal.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+    function fermerDetail() {
+      detailModal.hidden = true;
+      document.body.style.overflow = '';
+    }
+    document.getElementById('detail-close').addEventListener('click', fermerDetail);
+    document.getElementById('detail-backdrop').addEventListener('click', fermerDetail);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') fermerDetail(); });
+
     // --- Affichage liste ---
     function afficherListe() {
       document.getElementById('page-titre').textContent = programme.titre;
@@ -213,6 +282,17 @@
           </div>
           <span class="ex-check" aria-hidden="true">✅</span>
         `;
+
+        // Clic → ouvre le modal d'illustration si disponible
+        if (ILLUSTRATIONS[ex.id]) {
+          item.addEventListener('click', () => ouvrirDetail(ex));
+          item.setAttribute('tabindex', '0');
+          item.setAttribute('aria-label', ex.nom + ' — voir l\'illustration');
+          item.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') ouvrirDetail(ex);
+          });
+        }
+
         list.appendChild(item);
       });
     }
@@ -479,6 +559,7 @@
     chargerProgramme();
   })();
   </script>
+
   <script src="../js/assistant.js" defer></script>
 
 </body>

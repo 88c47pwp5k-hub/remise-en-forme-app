@@ -1,7 +1,7 @@
 // Service Worker — Remise en forme PWA
 // Stratégie : Cache First pour les assets statiques, Network First pour les données JSON
 
-const CACHE_NAME = 'remise-en-forme-v6';
+const CACHE_NAME = 'remise-en-forme-v7';
 
 // Dériver le chemin de base depuis la portée du SW (fonctionne en local ET sur GitHub Pages)
 // Ex: '/' en local, '/remise-en-forme-app/' sur GitHub Pages
@@ -22,6 +22,17 @@ const PRECACHE_PATHS = [
   'css/tabler-icons.css',
   'fonts/tabler-icons.woff2',
   'js/assistant.js',
+  'images/exercises/wall-sit.png',
+  'images/exercises/step-up.png',
+  'images/exercises/incline-push-up.png',
+  'images/exercises/chair-dip.png',
+  'images/exercises/mountain-climber.png',
+  'images/exercises/plank.png',
+  'images/exercises/worlds-greatest-stretch.png',
+  'images/exercises/torso-twist-stretch.png',
+  'images/exercises/seated-forward-fold-stretch.png',
+  'images/exercises/butterfly-stretch.png',
+  'images/exercises/childs-pose.png',
   'manifest.json',
   'icons/icon-192.png',
   'icons/icon-512.png',
