@@ -41,11 +41,13 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ ok: true, message: 'aucun abonnement enregistré' });
   }
 
-  // Configurer VAPID et envoyer
+  // Configurer VAPID et envoyer (sanitisation des clés — supprime tout char hors base64url)
+  const vapidPublic  = (process.env.VAPID_PUBLIC_KEY  || '').replace(/[^A-Za-z0-9\-_]/g, '');
+  const vapidPrivate = (process.env.VAPID_PRIVATE_KEY || '').replace(/[^A-Za-z0-9\-_]/g, '');
   webpush.setVapidDetails(
     'mailto:admin@remise-en-forme-app.vercel.app',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
+    vapidPublic,
+    vapidPrivate
   );
 
   const payload = JSON.stringify({
