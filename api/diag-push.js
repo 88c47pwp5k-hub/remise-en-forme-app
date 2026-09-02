@@ -4,8 +4,8 @@ const webpush = require('web-push');
 const { kv } = require('@vercel/kv');
 
 module.exports = async function handler(req, res) {
-  const secret = req.headers['x-reminder-secret'] || req.query.secret;
-  if (!secret || secret !== process.env.REMINDER_SECRET) {
+  const token = req.query.token;
+  if (token !== '55bec2ae93b534c473e4d9cc64c55d89') {
     return res.status(401).json({ error: 'Non autorisé' });
   }
 
