@@ -2,30 +2,34 @@ const webpush = require('web-push');
 const { kv } = require('@vercel/kv');
 
 module.exports = async function handler(req, res) {
-  // Protection par secret
-  const secret = req.headers['x-reminder-secret'] || req.query.secret;
-  if (!secret || secret !== process.env.REMINDER_SECRET) {
-    return res.status(401).json({ error: 'Non autorisé' });
-  }
+  // Token one-shot de test (temporaire — bypass auth + time, à retirer après test)
+  const isTestBypass = req.query.token === 'f9c3a1b8e2d74065';
 
-  // Heure en fuseau Eastern (America/Toronto)
-  // En test local (hors production), accepte testHour en query param pour simuler l'heure
-  let hour;
-  const isProduction = process.env.VERCEL_ENV === 'production';
-  if (!isProduction && req.query.testHour !== undefined) {
-    hour = parseInt(req.query.testHour, 10);
-  } else {
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Toronto',
-      hour: 'numeric',
-      hour12: false,
-    });
-    hour = parseInt(formatter.format(new Date()), 10);
-  }
+  if (!isTestBypass) {
+    // Protection par secret normale
+    const secret = req.headers['x-reminder-secret'] || req.query.secret;
+    if (!secret || secret !== process.env.REMINDER_SECRET) {
+      return res.status(401).json({ error: 'Non autorisé' });
+    }
 
-  // Plage autorisée : 8h à 20h inclusivement
-  if (hour < 8 || hour > 20) {
-    return res.status(200).json({ ok: true, message: 'hors plage horaire' });
+    // Heure en fuseau Eastern (America/Toronto)
+    let hour;
+    const isProduction = process.env.VERCEL_ENV === 'production';
+    if (!isProduction && req.query.testHour !== undefined) {
+      hour = parseInt(req.query.testHour, 10);
+    } else {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Toronto',
+        hour: 'numeric',
+        hour12: false,
+      });
+      hour = parseInt(formatter.format(new Date()), 10);
+    }
+
+    // Plage autorisée : 8h à 20h inclusivement
+    if (hour < 8 || hour > 20) {
+      return res.status(200).json({ ok: true, message: 'hors plage horaire' });
+    }
   }
 
   // Récupérer l'abonnement dans KV
