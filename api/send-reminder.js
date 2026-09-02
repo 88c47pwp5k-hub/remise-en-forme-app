@@ -48,11 +48,17 @@ module.exports = async function handler(req, res) {
   // Configurer VAPID et envoyer (sanitisation des clés — supprime tout char hors base64url)
   const vapidPublic  = (process.env.VAPID_PUBLIC_KEY  || '').replace(/[^A-Za-z0-9\-_]/g, '');
   const vapidPrivate = (process.env.VAPID_PRIVATE_KEY || '').replace(/[^A-Za-z0-9\-_]/g, '');
-  webpush.setVapidDetails(
-    'mailto:admin@remise-en-forme-app.vercel.app',
-    vapidPublic,
-    vapidPrivate
-  );
+
+  try {
+    webpush.setVapidDetails(
+      'mailto:admin@remise-en-forme-app.vercel.app',
+      vapidPublic,
+      vapidPrivate
+    );
+  } catch (err) {
+    console.error('[send-reminder] VAPID invalide :', err.message, '| pub:', vapidPublic.length, 'priv:', vapidPrivate.length);
+    return res.status(500).json({ error: `Clés VAPID invalides : ${err.message}` });
+  }
 
   const payload = JSON.stringify({
     title: '💧 Hydratation',
@@ -65,6 +71,6 @@ module.exports = async function handler(req, res) {
     res.status(200).json({ ok: true, message: 'notification envoyée' });
   } catch (err) {
     console.error('[send-reminder] Erreur web-push :', err.message);
-    res.status(500).json({ error: 'Échec de l\'envoi de la notification' });
+    res.status(500).json({ error: `Échec envoi : ${err.message}` });
   }
 };
