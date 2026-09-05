@@ -363,6 +363,48 @@
       font-style: italic;
     }
 
+    /* ── Photos confirmées par section ── */
+    .repas-photos {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-bottom: var(--space-xs);
+    }
+    .photo-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--accent-light);
+      border-radius: var(--radius-full);
+      padding: 4px 8px 4px 10px;
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--accent);
+      max-width: 100%;
+    }
+    .photo-aliments {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+    .photo-kcal {
+      color: var(--text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .photo-retirer {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 15px;
+      line-height: 1;
+      padding: 0 0 0 2px;
+      flex-shrink: 0;
+    }
+    .photo-retirer:hover { color: var(--danger); }
+
     .mention-legale {
       font-size: var(--font-size-xs);
       color: var(--text-muted);
@@ -576,9 +618,9 @@
   // ─── État ──────────────────────────────────────────────────────────────────
   let state = {
     repas: {
-      matin: null,  // null = pas rempli, objet analyse = rempli
-      midi:  null,
-      soir:  null,
+      matin: [],  // tableau d'analyses confirmées
+      midi:  [],
+      soir:  [],
     },
     alcool: [],
     sommeil: 7,
@@ -596,6 +638,12 @@
           state.alcool = Array.from({ length: state.alcool }, () => ({ type: 'inconnu', kcal: 125, heure: '' }));
         }
         if (!Array.isArray(state.alcool)) state.alcool = [];
+        // Migration repas : null ou objet unique → tableau
+        ['matin', 'midi', 'soir'].forEach(k => {
+          const v = state.repas[k];
+          if (!v) state.repas[k] = [];
+          else if (!Array.isArray(v)) state.repas[k] = [v];
+        });
       }
     } catch {}
   }
@@ -604,6 +652,24 @@
   }
 
   // ─── Repas ─────────────────────────────────────────────────────────────────
+
+  // Combine plusieurs analyses d'une même section en un seul résumé
+  function combineAnalyses(analyses) {
+    if (!analyses || !analyses.length) return null;
+    return {
+      calories_approx: analyses.reduce((s, a) => s + (a.calories_approx || 0), 0),
+      aliments: [...new Set(analyses.flatMap(a => a.aliments || []))],
+      categories: {
+        legumes_fruits: analyses.some(a => a.categories?.legumes_fruits),
+        proteines:      analyses.some(a => a.categories?.proteines),
+        grains_entiers: analyses.some(a => a.categories?.grains_entiers),
+      },
+      commentaire: analyses.length === 1
+        ? (analyses[0].commentaire ?? '')
+        : `${analyses.length} plats`,
+    };
+  }
+
   const REPAS_CONFIG = {
     matin: { label: 'Matin',   icone: '🌅', heure: '7h – 10h'  },
     midi:  { label: 'Midi',    icone: '☀️',  heure: '12h – 14h' },
@@ -611,9 +677,20 @@
   };
 
   function buildRepasSection(repasId) {
-    const cfg  = REPAS_CONFIG[repasId];
-    const data = state.repas[repasId];
-    const el   = document.getElementById(`repas-${repasId}`);
+    const cfg      = REPAS_CONFIG[repasId];
+    const photos   = state.repas[repasId]; // tableau
+    const combined = combineAnalyses(photos);
+    const el       = document.getElementById(`repas-${repasId}`);
+
+    const photosHTML = photos.map((p, i) => {
+      const aliments = (p.aliments || []).join(', ') || '—';
+      const kcal     = p.calories_approx ? ` · ~${p.calories_approx} kcal` : '';
+      return `<div class="photo-item">
+        <span class="photo-aliments" title="${aliments}">📷 ${aliments}</span>
+        <span class="photo-kcal">${kcal}</span>
+        <button class="photo-retirer" data-repas="${repasId}" data-index="${i}" aria-label="Retirer cette photo">×</button>
+      </div>`;
+    }).join('');
 
     el.innerHTML = `
       <div class="repas-header">
@@ -622,15 +699,16 @@
           ${cfg.label} <small style="color:var(--text-muted);font-weight:400;font-size:var(--font-size-xs)">${cfg.heure}</small>
         </div>
         <label class="btn-camera">
-          📷 Photo
+          📷 + Photo
           <input type="file" accept="image/*" capture="environment" data-repas="${repasId}" />
         </label>
       </div>
-      <div class="repas-statut ${data ? 'analyse' : ''}" id="statut-${repasId}">
-        ${data ? renderStatut(data) : 'Pas encore ajouté'}
+      <div class="repas-photos" id="photos-${repasId}">${photosHTML}</div>
+      <div class="repas-statut ${combined ? 'analyse' : ''}" id="statut-${repasId}">
+        ${combined ? renderStatut(combined) : 'Pas encore ajouté'}
       </div>
       <div class="categories-badges" id="badges-${repasId}">
-        ${data ? renderBadges(data) : ''}
+        ${combined ? renderBadges(combined) : ''}
       </div>
       <div class="analyse-loading" id="loading-${repasId}">
         <div class="spinner"></div> Analyse en cours…
@@ -639,6 +717,15 @@
     `;
 
     el.querySelector('input[type="file"]').addEventListener('change', onPhotoChange);
+    el.querySelectorAll('.photo-retirer').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.index, 10);
+        state.repas[btn.dataset.repas].splice(idx, 1);
+        save();
+        buildRepasSection(btn.dataset.repas);
+        updateBilan();
+      });
+    });
   }
 
   function renderStatut(data) {
@@ -726,7 +813,7 @@
   }
 
   function confirmerRepas(repasId, analyse) {
-    state.repas[repasId] = analyse;
+    state.repas[repasId].push(analyse);
     save();
     buildRepasSection(repasId);
     updateBilan();
@@ -845,7 +932,7 @@
 
   function getTotalKcal() {
     return Object.values(state.repas)
-      .filter(Boolean)
+      .flat()
       .reduce((s, r) => s + (r.calories_approx || 0), 0)
       + state.alcool.reduce((s, v) => s + v.kcal, 0)
       + (state.calories_cafe || 0);
@@ -854,7 +941,7 @@
   function renderCalories() {
     const { cible, defaultUsed } = getCibleCalories();
     const total   = getTotalKcal();
-    const hasData = Object.values(state.repas).some(Boolean) || state.alcool.length > 0;
+    const hasData = Object.values(state.repas).some(a => a.length > 0) || state.alcool.length > 0;
 
     document.getElementById('cals-total').textContent = total.toLocaleString('fr-FR');
     document.getElementById('cals-cible').textContent = cible.toLocaleString('fr-FR');
@@ -903,13 +990,15 @@
   }
 
   function scoreRepas() {
-    const repasListe = Object.values(state.repas).filter(Boolean);
-    const equilibres = repasListe.filter(r =>
-      r.categories?.legumes_fruits && r.categories?.proteines && r.categories?.grains_entiers
-    ).length;
+    const keys = ['matin', 'midi', 'soir'];
+    const sectionsAvecData = keys.filter(k => state.repas[k].length > 0);
+    const equilibres = sectionsAvecData.filter(k => {
+      const c = combineAnalyses(state.repas[k]);
+      return c?.categories?.legumes_fruits && c?.categories?.proteines && c?.categories?.grains_entiers;
+    }).length;
     if (equilibres >= 2) return 'vert';
     if (equilibres === 1) return 'orange';
-    if (repasListe.length === 0) return null; // pas encore de repas = on ne juge pas encore
+    if (sectionsAvecData.length === 0) return null;
     return 'rouge';
   }
 
